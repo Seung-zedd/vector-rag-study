@@ -1,5 +1,8 @@
 # Lesson 01 — Embedding, Vector Similarity, Metadata, and Lexical Search
 
+> **Question that led here**
+> What determines the numeric values when text is converted into an embedding?
+
 ## 1. Embedding
 
 An embedding model converts text into a fixed-length numeric vector.
@@ -26,6 +29,9 @@ The important part is therefore not the meaning of each individual float, but th
 
 ---
 
+> **Question that led here**
+> If each float is a vector element, can the embedding be treated as a point in vector space?
+
 ## 2. A vector as components and a point
 
 For a simple 3-dimensional example:
@@ -48,6 +54,9 @@ O(0,0,0) ─────→ P(0.8, 0.1, 0.7)
 Real embedding models usually use hundreds or thousands of dimensions, so we cannot visualize the full space directly, but the mathematical idea is the same.
 
 ---
+
+> **Question that led here**
+> If two embedded texts become vectors, can cosine similarity tell us how similar their meanings or contexts are?
 
 ## 3. Cosine similarity
 
@@ -76,6 +85,9 @@ The core idea is:
 > Cosine similarity is about the angle between vectors, not the direct line segment between the two embedding points.
 
 ---
+
+> **Question that led here**
+> If vectors are drawn from the origin, is that the same thing as measuring the Euclidean distance between the embedding points?
 
 ## 4. L2 distance vs cosine similarity
 
@@ -110,6 +122,9 @@ L2 distance        → point-to-point distance
 Both can be used in vector search, depending on the embedding model and retrieval design.
 
 ---
+
+> **Question that led here**
+> Why should data that does not need to be embedded still be stored as metadata?
 
 ## 5. Embedding text vs metadata
 
@@ -169,6 +184,9 @@ A useful mental model is:
 
 ---
 
+> **Question that led here**
+> Is metadata itself an index, or is it structured information that can be indexed?
+
 ## 6. Metadata is not the same thing as an index
 
 Metadata is structured information attached to a record.
@@ -194,6 +212,9 @@ idx_region
 So metadata may be indexed, but metadata itself is not automatically an index.
 
 ---
+
+> **Question that led here**
+> Does RAG data cleaning mean the same kind of normalization, indexing, and duplicate removal used in traditional database design?
 
 ## 7. RAG data preparation vs traditional database preparation
 
@@ -239,6 +260,9 @@ From a normalization perspective this can look redundant, but retrieval systems 
 
 ---
 
+> **Question that led here**
+> Can structured fields such as a region be retrieved quickly with an inverted-index-based search engine?
+
 ## 8. Lexical search
 
 Lexical search retrieves documents based mainly on words or tokens that occur in the query and documents.
@@ -281,6 +305,9 @@ Conceptually:
 Instead of scanning every document, the engine can quickly find which documents contain a token.
 
 ---
+
+> **Question that led here**
+> Elasticsearch and lexical search sound similar. What is the actual difference between them?
 
 ## 9. Elasticsearch vs lexical search
 
