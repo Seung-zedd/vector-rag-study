@@ -172,6 +172,39 @@ probabilistic relevance modeling
 
 ---
 
+> ❓ **Q. ANN and HNSW both seem to search only promising candidates instead of scanning everything. What is the difference?**
+>
+> **A. ANN is the broader search strategy, while HNSW is one concrete algorithm/index structure used to implement ANN.**
+>
+> ANN says:
+>
+> ```text
+> Do not compare against every vector.
+> Approximate the nearest neighbors efficiently.
+> ```
+>
+> HNSW says:
+>
+> ```text
+> Build a hierarchical proximity graph.
+> Navigate through promising neighbors.
+> Refine the search as you descend through layers.
+> ```
+>
+> So the relationship is:
+>
+> ```text
+> ANN
+> = the general problem-solving strategy
+>
+> HNSW
+> = a graph-based implementation of ANN
+> ```
+>
+> HNSW is one ANN approach among several possible methods.
+
+---
+
 ## 3. HNSW
 
 HNSW stands for **Hierarchical Navigable Small World**.
