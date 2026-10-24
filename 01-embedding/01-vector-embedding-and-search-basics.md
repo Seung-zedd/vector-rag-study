@@ -304,6 +304,22 @@ Conceptually:
 
 Instead of scanning every document, the engine can quickly find which documents contain a token.
 
+> ❓ **Q. If lexical search uses an inverted index and its term dictionary behaves like a key-value map, is lexical search effectively O(1) and therefore always faster than semantic search?**
+>
+> **A. Not end-to-end.** Looking up a term in a dictionary can be close to O(1) with a hash-based structure, or O(log V) with a tree/FST-like structure, where V is the vocabulary size. But lexical search still has to read the term's posting list, combine posting lists for multiple query terms, compute relevance scores such as BM25, and often maintain or sort the top-K results.
+>
+> So the actual cost depends on factors such as:
+>
+> - the number of query terms,
+> - the document frequency of each term,
+> - posting-list intersections/unions,
+> - scoring work,
+> - and top-K ranking.
+>
+> Lexical search is often faster and cheaper than vector search for exact keyword or identifier retrieval, but it is not generally correct to describe the whole lexical-search operation as O(1).
+>
+> Vector search is also not necessarily a full O(N × D) scan in production. ANN indexes such as HNSW avoid comparing against every vector and trade a small amount of recall for much lower latency.
+
 ---
 
 > **Question that led here**
@@ -382,26 +398,61 @@ This is an important foundation for hybrid retrieval.
 
 ---
 
-## 11. Three-way field classification
+## 11. Production-oriented field classification
 
-A practical first-pass classification for source fields is:
+A more useful production-oriented classification is:
 
 ```text
-1. Embedding text
-   → semantic retrieval needs the content
+1. Lexical / Filter
+   → exact keyword, ID, region, category, code, or structured condition
 
-2. Metadata / structured field
-   → filtering, classification, display, sorting, or tracing needs it
+2. Embedding
+   → semantic or contextual retrieval
 
-3. Discard
-   → neither retrieval nor the application needs it
+3. Payload
+   → information returned to the application or shown in the final answer
+
+4. Drop
+   → data with no retrieval, filtering, display, or operational value
+```
+
+A single field may have multiple roles.
+
+For example:
+
+```text
+phone_number
+→ Lexical / Filter
+→ Payload
+
+description
+→ Embedding
+→ Payload
+
+region
+→ Lexical / Filter
+→ may also appear in Embedding text when semantic context benefits from it
+```
+
+This is more precise than a simple "Embedding / Metadata / Drop" split because "metadata" often mixes together several different responsibilities.
+
+A useful pipeline is:
+
+```text
+Raw source schema
+        ↓
+Canonical field normalization
+        ↓
+Retrieval-role classification
+        ↓
+Lexical / Filter | Embedding | Payload | Drop
 ```
 
 Important:
 
 > "Do not embed this field" does not automatically mean "store it as metadata."
 
-Some fields can simply be discarded.
+Some fields belong in Lexical / Filter, some belong only in Payload, and some should simply be dropped.
 
 ---
 
@@ -422,10 +473,13 @@ Compare vectors
 For retrieval-oriented data modeling:
 
 ```text
-semantic content → embedding text
-structured attributes → metadata
-irrelevant attributes → discard
+exact identifiers / categories / regions → Lexical / Filter
+semantic or contextual content          → Embedding
+answer/display data                      → Payload
+irrelevant data                          → Drop
 ```
+
+A field may belong to more than one role.
 
 For search:
 
@@ -490,3 +544,18 @@ An exact or range-based condition on structured fields such as region, category,
 
 ### Hybrid Retrieval
 Retrieval that combines multiple signals such as lexical search, vector similarity, and structured metadata filters.
+
+### Lexical / Filter
+A retrieval role for exact keywords, identifiers, regions, categories, codes, and other structured constraints.
+
+### Payload
+Data carried with a retrieved record for display, answer generation, tracing, or downstream application use.
+
+### Canonicalization
+The process of mapping source-specific field names and values into a consistent canonical representation before retrieval-role classification.
+
+### Posting List
+The list of documents or positions associated with a term in an inverted index.
+
+### Document Frequency
+The number of documents that contain a given term. It strongly affects how much work a lexical search may need to do for that term.
