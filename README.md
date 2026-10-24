@@ -11,6 +11,7 @@ The goal is not to memorize APIs. The goal is to be able to explain, inspect, va
 ## Contents
 
 - [Lesson 01 — Embedding, Vector Similarity, Metadata, and Lexical Search](./01-embedding/01-vector-embedding-and-search-basics.md)
+- [Lesson 02 — ANN, Top-K, and HNSW](./02-vector-search/01-ann-topk-hnsw.md)
 
 ## Scope
 
