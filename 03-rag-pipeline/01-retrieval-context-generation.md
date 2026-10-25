@@ -651,6 +651,142 @@ This avoids embedding and vector search for queries that can be answered more ef
 
 ---
 
+
+## 🔗 Connecting the Dots — Query as Highlight × Anchor-First Retrieval
+
+A useful way to reinterpret a user query is to treat it like a virtual highlight.
+
+In a PDF annotation system, a highlight already provides a precise anchor:
+
+```text
+Highlight
+   ↓
+Target Region
+   ↓
+Underlying Text
+   ↓
+Surrounding Context
+```
+
+In retrieval, the query does not initially have a physical location, so the first task is to discover an anchor inside the indexed data.
+
+```text
+User Query
+   ↓
+Anchor Detection
+   ↓
+Matched Content Region
+   ↓
+Tiered Context Expansion
+```
+
+A practical three-tier mapping is:
+
+```text
+Tier 1
+→ directly matched entity / field / phrase
+
+Tier 2
+→ the containing object or closely related fields
+
+Tier 3
+→ broader parent, category, source, or neighboring context
+```
+
+This creates a useful bridge between annotation-based context extraction and retrieval-based context construction.
+
+### Lexical-first Cascade
+
+Exact and lexical signals are usually more deterministic than semantic similarity.
+
+A good default routing strategy is therefore:
+
+```text
+User Query
+   ↓
+Exact / Entity / Lexical Anchor Search
+   ↓
+High-confidence anchor?
+   ├─ YES
+   │    → Local Context Expansion
+   │    → Answer / downstream generation
+   │
+   └─ NO
+        → Semantic Retrieval
+        → Vector Search
+```
+
+This does not mean lexical retrieval is universally better than embedding.
+
+Instead:
+
+> Use deterministic evidence first when it is sufficient, and use semantic retrieval when lexical evidence cannot express the user's intent.
+
+This can reduce unnecessary embedding calls, vector-search latency, and ambiguity for exact queries.
+
+---
+
+## 👨‍💻 Implementation — JSON Logical Regions Instead of Artificial Coordinates
+
+For JSON-centric crawling pipelines, introducing artificial physical coordinates is usually unnecessary.
+
+A JSON document already contains structural location information such as:
+
+```text
+JSONPath
+field name
+object boundary
+array index
+parent-child relationship
+```
+
+Therefore, rather than pretending that JSON items are PDF pages with synthetic x/y coordinates, it is simpler to use logical regions.
+
+Example:
+
+```text
+$.items[42].title
+→ anchor
+
+$.items[42]
+→ local object region
+
+parent/category/source metadata
+→ broader context
+```
+
+A compact architecture can be:
+
+```text
+QueryRouter
+   ↓
+Lexical / Filter Anchor Detection
+   ↓
+JsonRegionResolver
+   ↓
+3-tier Context Expansion
+   ↓
+Semantic Retrieval fallback when needed
+```
+
+This preserves the useful abstraction from coordinate-based extraction without introducing unnecessary geometry.
+
+The important abstraction is not:
+
+```text
+physical clipping box
+```
+
+but:
+
+```text
+Anchor
+→ Region
+→ Context Expansion
+```
+
+When the ingestion domain is predominantly JSON-based, a single JSON-oriented resolver is usually preferable to prematurely building multiple format-specific resolvers.
+
 ## Lesson 03 Summary
 
 ```text
@@ -728,3 +864,12 @@ The instruction-level design that tells the model how to interpret, prioritize, 
 
 ### Evidence Hierarchy
 An explicit ordering or role assignment that distinguishes primary evidence from supporting or surrounding context.
+
+### Anchor
+A precise lexical, structural, or semantic point used as the starting location for context expansion.
+
+### Logical Region
+A structurally bounded area of data, such as a JSON object or field group, used instead of physical coordinates.
+
+### Lexical-first Cascade
+A routing strategy that attempts exact or lexical retrieval first and falls back to semantic retrieval when deterministic matching is insufficient.
