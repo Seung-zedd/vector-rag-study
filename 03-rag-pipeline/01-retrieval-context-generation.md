@@ -281,23 +281,135 @@ that is sufficient to answer the query
 
 ## 🔗 Connecting the Dots — Cubrain × Context Assembly
 
-A useful connection appears in systems that do not feed an entire source to an LLM.
+Cubrain provides a useful concrete example of how Context Assembly can fail in two different ways:
 
-A generalized pattern is:
+```text
+Context Assembly Failure
+├─ Mechanical Failure
+└─ Semantic / Prompt-Design Failure
+```
+
+### 1. Mechanical Failure Control
+
+Cubrain does not treat a PDF as one flat block of text.
+
+Instead, it extracts information through physically constrained regions and local context expansion.
+
+A generalized version of its pipeline is:
+
+```text
+PDF page
+   ↓
+annotation coordinate detection
+   ↓
+target-region extraction
+   ↓
+surrounding-context padding
+   ↓
+page-level grouping
+   ↓
+LLM input
+```
+
+Its context structure can be understood as a three-tier evidence model:
+
+```text
+Tier 1 — Target Content
+→ the user-selected or visually marked content itself
+
+Tier 2 — Underlying Text
+→ text directly beneath or associated with the target region
+
+Tier 3 — Surrounding Context
+→ nearby paragraph-level context added through coordinate padding
+```
+
+This directly reduces mechanical Context Assembly failures such as:
+
+- target text being cut off
+- losing the local semantic neighborhood
+- mixing unrelated parts of the page
+- passing excessive irrelevant text
+- failing to associate an image or annotation with its nearby text
+
+This is conceptually similar to RAG systems that recover neighboring chunks or parent context around a retrieved chunk.
+
+### 2. Semantic / Prompt-Design Failure Control
+
+Cubrain also controls the semantic interpretation of assembled context through explicit prompt design.
+
+Its generation layer separates:
+
+```text
+System-level role
+→ "expert tutor"
+
+User-level structured context
+→ page context
+→ annotations
+→ target language
+→ generation rules
+→ output format
+```
+
+The prompt further defines how different evidence types should be interpreted.
+
+For example, a generalized version is:
+
+```text
+Highlight
+→ conceptual question
+
+Underline
+→ factual question
+
+Ink
+→ visual content + surrounding text
+
+FreeText
+→ user note + surrounding context
+```
+
+This addresses a different class of failure.
+
+Even if the mechanically assembled evidence is correct, the model can still fail if:
+
+- the evidence hierarchy is unclear
+- source roles are ambiguous
+- the model does not know how to interpret each annotation type
+- conflicting instructions exist
+- the output contract is underspecified
+- the model is not told how to synthesize multimodal evidence
+
+So Context Assembly quality depends on both:
+
+```text
+Mechanical assembly
+→ What evidence is physically included?
+
+Semantic assembly
+→ How is that evidence explained and constrained for the model?
+```
+
+The transferable lesson is:
+
+> A good Context Assembly layer is not only a string concatenator. It is both an evidence-construction layer and an instruction-design layer.
+
+### Shared abstraction
 
 ```text
 large source
    ↓
-select task-relevant region
+select task-relevant evidence
    ↓
-add surrounding local context
+restore necessary local context
    ↓
 group related evidence
    ↓
+define evidence roles and instructions
+   ↓
 assemble final model input
 ```
-
-This is conceptually similar to RAG Context Assembly.
 
 Useful transferable ideas include:
 
@@ -306,6 +418,8 @@ Useful transferable ideas include:
 3. Batch related evidence when coherence matters.
 4. Reduce duplication before generation.
 5. Combine multiple evidence types when necessary.
+6. Explicitly define how the model should interpret each evidence type.
+7. Treat output format and reasoning constraints as part of Context Assembly.
 
 ---
 
@@ -605,3 +719,12 @@ Optical Character Recognition. A technique for extracting textual content from i
 
 ### Multimodal
 A setting in which multiple information types such as text and images are processed together.
+
+### Mechanical Context Assembly
+The deterministic construction of model input through selection, ordering, grouping, truncation control, deduplication, region extraction, and token-budget management.
+
+### Semantic Context Assembly
+The instruction-level design that tells the model how to interpret, prioritize, and synthesize the evidence placed into context.
+
+### Evidence Hierarchy
+An explicit ordering or role assignment that distinguishes primary evidence from supporting or surrounding context.
