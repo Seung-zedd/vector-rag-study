@@ -24,3 +24,7 @@ It intentionally excludes:
 - private system designs
 - credentials or secrets
 - project-specific confidential information
+
+## License
+
+This repository is licensed under the [MIT License](./LICENSE).
