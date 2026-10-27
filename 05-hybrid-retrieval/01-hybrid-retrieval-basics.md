@@ -633,6 +633,93 @@ System B
 
 이 문제는 이후 MRR, nDCG 같은 ranking metric에서 다룬다.
 
+
+## 12. MRR (Mean Reciprocal Rank)
+
+Recall@K와 Precision@K는 관련 문서의 비율을 보여주지만 첫 정답의 순위를 충분히 구분하지 못한다.
+
+**RR (Reciprocal Rank)**은 첫 번째 relevant 문서가 등장한 순위의 역수다.
+
+```text
+RR = 1 / rank(first relevant)
+
+첫 정답 1위 → RR=1
+첫 정답 3위 → RR≈0.333
+첫 정답 5위 → RR=0.2
+정답 없음 → RR=0
+```
+
+**MRR**은 여러 query에서 RR의 평균이다.
+
+```text
+MRR = (1/N) × Σ RR(query_i)
+
+첫 정답 순위가 1, 2, 4라면
+MRR = (1 + 1/2 + 1/4) / 3 ≈ 0.583
+```
+
+한계: 첫 번째 relevant 문서 외의 추가 정답에는 직접 보상하지 않는다.
+
+> ❓ **Q. 첫 정답 이후의 문서는 MRR 보상이 없으니 모두 불필요한 retrieval cost인가?**
+>
+> **A. 아니다.** MRR은 ranking *평가 지표*이지 검색 종료 알고리즘이 아니다. 여러 근거가 필요한 query에는 추가 문서가 유용할 수 있다. 첫 정답 이후의 문서는 MRR 계산에 반영되지 않을 뿐이다.
+
+---
+
+## 13. nDCG (Normalized Discounted Cumulative Gain)
+
+nDCG는 **여러 문서의 관련성 등급과 순위**를 함께 반영한다.
+
+```text
+rel_i = i번째 검색 결과의 관련성 등급
+예: 3=매우 관련, 2=관련, 1=약간 관련, 0=무관
+
+DCG@K = Σ(i=1..K) (2^rel_i - 1) / log₂(i+1)
+IDCG@K = 이상적인 정렬 결과의 DCG@K
+nDCG@K = DCG@K / IDCG@K
+```
+
+일반적으로 nDCG는 0~1이고 1이면 이상적인 순위다. IDCG=0인 query의 처리 규칙은 평가 프로토콜에서 별도 정의해야 한다.
+
+```text
+MRR
+→ 첫 정답이 얼마나 앞에 있는가?
+
+nDCG
+→ 관련성 높은 문서들이 전체적으로 얼마나 잘 정렬됐는가?
+```
+
+nDCG 계산에는 query-document 별 관련성 판정값인 **qrels (relevance judgments)**가 필요하다.
+
+---
+
+## 🔗 Connecting the Dots — Ranking Strategy × Evaluation Metric × Verifier
+
+> ❓ **Q. Strategy는 RRF, Qualification은 MRR, Verifier는 nDCG라고 보면 되는가?**
+>
+> **A. 역할 구분은 좋지만 MRR과 nDCG는 모두 Evaluation Metric이다.** RRF는 ranking을 만드는 전략이고, MRR/nDCG는 ranking의 품질을 측정한다. Verifier는 계산된 지표를 명시된 합격 기준과 비교하는 검증 절차다.
+
+```text
+Retrieval Results
+   ↓
+Fusion Strategy (RRF / Weighted Fusion)
+   ↓
+Final Ranking
+   ↓
+Evaluation Metrics
+   ├─ Recall@K / Precision@K
+   ├─ MRR
+   └─ nDCG@K
+   ↓
+Verifier (Acceptance Criteria)
+   ↓
+PASS / FAIL / Investigation
+```
+
+예시로 `nDCG@10 ≥ 0.85` 같은 기준을 둘 수 있지만, 실제 threshold는 평가 데이터셋과 제품 요구사항으로 정해야 한다.
+
+핵심: **Ranking algorithm / Evaluation metric / Verification policy는 서로 다른 책임이다.**
+
 ## Lesson 05 현재 요약
 
 ```text
@@ -710,3 +797,18 @@ QueryRouter가 적절한 retrieval path를 선택한 비율.
 
 ### Precision@K
 Top-K 결과 중 relevant document가 차지하는 비율.
+
+### Reciprocal Rank (RR)
+첫 번째 relevant 결과의 순위에 역수를 취한 값.
+
+### MRR
+복수 query의 Reciprocal Rank 평균. 첫 정답의 빠른 등장에 초점을 둔 ranking metric.
+
+### DCG / nDCG
+각 결과의 관련성 등급과 순위를 할인 누적하고 이상적인 정렬 결과로 정규화하는 ranking metric.
+
+### Qrels
+Query-document 쌍에 대한 사람이 정의하거나 검증한 관련성 판정값.
+
+### Verifier
+지표·로그·중간 결과를 명시한 acceptance criteria와 비교해 검증하는 절차 또는 컴포넌트.
