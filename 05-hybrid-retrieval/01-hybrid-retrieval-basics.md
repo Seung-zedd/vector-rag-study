@@ -406,6 +406,233 @@ After Retrieval
 
 초기에는 fixed weight로 시작하고, query log와 evaluation dataset이 쌓이면 α, β 또는 각 feature weight를 조정할 수 있다.
 
+
+## 9. Rule-based Router vs Classifier / LLM Router
+
+가장 단순한 QueryRouter는 deterministic rule 기반이다.
+
+```text
+if ID pattern:
+    → Exact / Filter
+
+elif known entity:
+    → Lexical
+
+elif semantic preference:
+    → Semantic
+
+else:
+    → Hybrid
+```
+
+장점:
+
+- 빠름
+- 저비용
+- deterministic
+- debugging이 쉬움
+- 설명 가능성이 높음
+
+단점:
+
+- rule이 늘수록 복잡해짐
+- 예외가 많아짐
+- 새로운 표현에 약함
+
+Classifier 기반 Router는 query feature를 보고 route를 예측한다.
+
+```text
+Query
+   ↓
+Classifier
+   ↓
+LEXICAL / SEMANTIC / HYBRID
+```
+
+LLM Router는 decomposition까지 한 번에 수행할 수 있다.
+
+```json
+{
+  "route": "HYBRID",
+  "filters": {},
+  "lexical_terms": [],
+  "semantic_query": "..."
+}
+```
+
+다만 LLM Router는 latency, cost, non-determinism, prompt dependency가 커질 수 있다.
+
+현실적인 progression:
+
+```text
+Rule-based
+   ↓
+Rule-based + Confidence
+   ↓
+Small Classifier
+   ↓
+LLM Router
+```
+
+핵심:
+
+> 확실한 패턴은 deterministic rule로 처리하고, 애매한 query만 더 비싼 classifier/LLM에 넘기는 것이 안정적이다.
+
+---
+
+## 10. Router Misclassification Failure
+
+QueryRouter가 잘못 분류하면 retrieval path 자체가 잘못된다.
+
+예:
+
+```text
+"부산에서 조용한 카페"
+→ Lexical only로 잘못 routing
+→ "조용한" semantic preference를 충분히 반영하지 못함
+```
+
+반대로:
+
+```text
+"광안리해수욕장 운영시간"
+→ Semantic only로 잘못 routing
+→ exact entity lookup 대신 비슷한 후보가 섞일 수 있음
+```
+
+Failure propagation:
+
+```text
+Wrong Routing
+   ↓
+Wrong Candidate Space
+   ↓
+Poor Retrieval
+   ↓
+Poor Context
+   ↓
+Wrong Answer
+```
+
+Router도 독립적으로 평가해야 한다.
+
+대표 지표:
+
+```text
+Route Accuracy
+→ 적절한 retrieval path를 선택했는가?
+
+Fallback Rate
+→ 첫 route 실패 후 fallback이 얼마나 발생하는가?
+
+Retrieval Recall after Routing
+→ routing 이후 정답 문서를 실제로 찾았는가?
+
+Latency / Cost
+→ routing 전략이 실제 비용을 줄였는가?
+```
+
+중요:
+
+> Router Accuracy와 Retrieval Quality는 같은 것이 아니다.
+
+```text
+Query
+   ↓
+[Route Evaluation]
+   ↓
+Retriever
+   ↓
+[Retrieval Evaluation]
+```
+
+Routing correctness와 retrieval correctness는 서로 다른 책임 계층이므로 따로 측정해야 한다.
+
+---
+
+## 11. Hybrid Retrieval Evaluation — Recall@K / Precision@K
+
+검색 품질은 감이 아니라 metric으로 측정해야 한다.
+
+### Recall@K
+
+정답 문서가:
+
+```text
+A, B, C
+```
+
+이고 Top-5 결과가:
+
+```text
+[A, D, B, E, F]
+```
+
+라면 정답 3개 중 2개를 찾았으므로:
+
+```text
+Recall@5 = 2 / 3 = 0.67
+```
+
+의미:
+
+> 존재하는 relevant document 중 Top-K 안에 얼마나 많이 포함시켰는가.
+
+### Precision@K
+
+같은 Top-5 결과에서 relevant result는 A, B 두 개이므로:
+
+```text
+Precision@5 = 2 / 5 = 0.4
+```
+
+의미:
+
+> 가져온 Top-K 결과 중 실제 relevant result의 비율이 얼마나 되는가.
+
+Trade-off:
+
+```text
+Recall 높이기
+→ 후보군 넓힘
+→ noise 증가 가능
+
+Precision 높이기
+→ 후보군 엄격하게 제한
+→ 정답 누락 가능
+```
+
+Hybrid Retrieval 비교 예:
+
+```text
+Lexical only
+Recall@5 = 0.62
+
+Semantic only
+Recall@5 = 0.71
+
+Hybrid
+Recall@5 = 0.84
+```
+
+이렇게 비교하면 "Hybrid가 좋아 보인다"가 아니라 실제 retrieval quality improvement를 수치로 설명할 수 있다.
+
+다만 Recall@K와 Precision@K는 ranking position 자체의 품질은 충분히 반영하지 못한다.
+
+예:
+
+```text
+System A
+[정답, 정답, 오답, 오답, 오답]
+
+System B
+[오답, 오답, 오답, 정답, 정답]
+```
+
+둘의 Precision@5 / Recall@5는 같을 수 있지만 사용자 경험은 System A가 더 좋다.
+
+이 문제는 이후 MRR, nDCG 같은 ranking metric에서 다룬다.
+
 ## Lesson 05 현재 요약
 
 ```text
@@ -471,3 +698,15 @@ user query를 hard constraint, lexical term, semantic preference 등 역할별 s
 
 ### Weighted Signal Aggregation
 여러 signal을 가중합 등으로 결합해 하나의 score 또는 decision value를 만드는 방식.
+
+### Rule-based Router
+명시적인 조건과 pattern으로 retrieval path를 결정하는 QueryRouter.
+
+### Route Accuracy
+QueryRouter가 적절한 retrieval path를 선택한 비율.
+
+### Recall@K
+존재하는 relevant document 중 Top-K 안에 포함된 비율.
+
+### Precision@K
+Top-K 결과 중 relevant document가 차지하는 비율.
