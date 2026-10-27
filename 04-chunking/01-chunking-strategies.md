@@ -1,30 +1,20 @@
 # Lesson 04 — Chunking
 
-## 1. Why Chunking Exists
+## 1. 왜 Chunking이 필요한가
 
-Chunking is the process of splitting a document into retrieval-friendly units.
+Chunking은 긴 문서를 retrieval-friendly unit으로 나누는 과정이다.
 
-A long document often contains multiple topics:
-
-```text
-history
-operating hours
-parking
-nearby restaurants
-transportation
-```
-
-If the entire document is embedded as one vector, the meaning of a specific detail can be diluted inside the overall representation.
+긴 문서 하나에 여러 주제가 섞이면:
 
 ```text
-Long Document
-   ↓
-One Embedding
-   ↓
-Multiple meanings compressed together
+역사
+운영시간
+주차
+주변 맛집
+교통
 ```
 
-Chunking instead creates smaller searchable units.
+문서 전체를 하나의 embedding으로 만들 경우 특정 의미가 희석될 수 있다.
 
 ```text
 Document
@@ -32,12 +22,11 @@ Document
 Chunk 1
 Chunk 2
 Chunk 3
-...
    ↓
-Embedding per chunk
+Embedding per Chunk
 ```
 
-The core trade-off is:
+핵심 trade-off:
 
 ```text
 Context Preservation
@@ -45,97 +34,44 @@ Context Preservation
 Retrieval Precision
 ```
 
-Chunks that are too small lose context.
-
-Chunks that are too large mix unrelated meanings.
-
 ---
 
-## 2. Chunking vs Retrieval-Role Classification
+## 2. Chunking vs Retrieval-role Classification
 
-Chunking and retrieval-role classification solve different problems.
+둘은 다른 문제를 푼다.
 
 ```text
 Chunking
-→ How large should each retrieval unit be?
+→ 검색 단위를 얼마나 크게 나눌 것인가?
 
 Lexical / Filter / Embedding / Payload
-→ What retrieval role should each field play?
+→ 각 field를 retrieval에서 어떤 역할로 사용할 것인가?
 ```
 
-If a JSON item is already compact and semantically coherent, chunking may be unnecessary.
-
-Example:
-
-```json
-{
-  "title": "A Place",
-  "address": "Seoul ...",
-  "description": "Known for a quiet walking path and night view.",
-  "phone": "02-1234-5678"
-}
-```
-
-A reasonable classification could be:
-
-```text
-title
-→ Lexical / Filter + Payload
-
-address
-→ Lexical / Filter + Payload
-
-description
-→ Embedding + Payload
-
-phone
-→ Lexical / Filter + Payload
-```
-
-In this case, the JSON object is already an appropriate retrieval unit.
+이미 JSON item이 작고 의미적으로 응집돼 있다면 chunking을 생략할 수 있다.
 
 ---
 
-## 3. Field Decomposition Before Chunking
+## 3. Field Decomposition이 먼저다
 
-A badly shaped schema should not be fixed by blindly slicing strings.
-
-Suppose one field contains several semantic roles:
+예:
 
 ```text
 address:
-"Seoul ... / beautiful night-view attraction / contact 02-1234-5678"
+"서울 ... / 야경이 아름다운 관광지 / 문의 02-1234-5678"
 ```
 
-The better first step is structural decomposition.
+이 경우 무작정 chunking하기보다 먼저:
 
 ```text
 address
-→ "Seoul ..."
-
 description
-→ "beautiful night-view attraction"
-
 contact_number
-→ "02-1234-5678"
 ```
 
-Then assign retrieval roles.
+로 의미별 field decomposition을 하는 것이 낫다.
 
-```text
-address
-→ Lexical / Filter + Payload
-
-description
-→ Embedding + Payload
-
-contact_number
-→ Lexical / Filter + Payload
-```
-
-Only when a field remains long or semantically mixed after decomposition should chunking become the next tool.
-
-A useful order is:
+추천 순서:
 
 ```text
 Raw Data
@@ -144,19 +80,15 @@ Canonicalization
    ↓
 Field Decomposition
    ↓
-Chunking needed?
+Chunking 필요한가?
    ↓
-Retrieval-role classification
+Retrieval-role Classification
 ```
 
 ---
 
 ## 4. Fixed-size Chunking
 
-Fixed-size chunking splits data by length.
-
-Examples:
-
 ```text
 500 characters
 500 characters
@@ -164,50 +96,30 @@ Examples:
 ...
 ```
 
-or:
+또는:
 
 ```text
-512 tokens
 512 tokens
 512 tokens
 ...
 ```
 
-Advantages:
+장점:
 
-- simple
-- fast
+- 단순함
+- 빠름
 - deterministic
-- easy to implement consistently
+- 구현 쉬움
 
-The main weakness is boundary breakage.
+단점:
 
-Example:
-
-```text
-"Operating hours are 09:00–18:00, and
-the attraction is closed every Monday."
-```
-
-A hard boundary could produce:
-
-```text
-Chunk 1
-"Operating hours are 09:00–18:00, and"
-
-Chunk 2
-"the attraction is closed every Monday."
-```
-
-The original meaning is now split across chunks.
+- 의미 단위가 경계에서 잘릴 수 있음
 
 ---
 
 ## 5. Structure-aware Chunking
 
-Structure-aware chunking uses document structure instead of arbitrary length.
-
-Possible boundaries include:
+문서의 구조를 경계로 사용한다.
 
 ```text
 heading
@@ -219,71 +131,44 @@ JSON field
 HTML node
 ```
 
-Example:
-
-```text
-[Operating Information]
-Hours: 09:00–18:00
-Closed: Monday
-
-[Transportation]
-Subway ...
-Bus ...
-```
-
-A structure-aware splitter can produce:
-
-```text
-Chunk 1
-→ Operating Information
-
-Chunk 2
-→ Transportation
-```
-
-This preserves logical organization better than fixed-size splitting.
+fixed-size보다 논리적 구조를 잘 보존한다.
 
 ---
 
 ## 6. Semantic Chunking
 
-Semantic chunking looks for changes in meaning rather than only structural or length boundaries.
+길이나 문서 구조가 아니라 **의미 변화**를 기준으로 자른다.
 
 ```text
-historical background
-historical background
-historical background
-──────────── semantic boundary
-operating hours
-admission fee
-closed days
-──────────── semantic boundary
-transportation
-parking
+역사 설명
+역사 설명
+──────── semantic boundary
+운영시간
+입장료
+휴무일
+──────── semantic boundary
+교통
+주차
 ```
 
-The three major approaches can be summarized as:
+비교:
 
 ```text
 Fixed-size
-→ length boundary
+→ 길이 기준
 
 Structure-aware
-→ document-structure boundary
+→ 문서 구조 기준
 
 Semantic
-→ meaning boundary
+→ 의미 변화 기준
 ```
 
-A practical default is often:
-
-> Start with structure-aware chunking, then add semantic splitting only when the source structure is not sufficient.
+실무 기본값으로는 Structure-aware를 먼저 고려하고 필요할 때 Semantic splitting을 추가하는 것이 안정적이다.
 
 ---
 
 ## 🔗 Connecting the Dots — Paging vs Segmentation
-
-Chunking has a useful analogy with operating-system memory management.
 
 ```text
 Fixed-size Chunking
@@ -293,54 +178,31 @@ Structure-aware / Semantic Chunking
 ↔ Segmentation
 ```
 
-Paging divides memory into fixed-size blocks.
+Paging은 고정 크기 단위, Segmentation은 논리적 단위를 보존한다.
 
-Segmentation preserves logical units such as code, data, or stack regions.
-
-The analogy is not exact, but the shared idea is useful:
-
-```text
-Paging
-→ regular physical-sized units
-
-Segmentation
-→ logical units
-
-Chunking
-→ retrieval units
-```
-
-In memory management, the OS manages page or segment tables, while the MMU uses those mappings for address translation.
-
-A loose retrieval analogy is:
+Loose analogy:
 
 ```text
 Virtual Address
 → MMU
 → Page Table
 → Physical Page
-```
 
-and:
-
-```text
 User Query
 → QueryRouter
 → Retrieval Index / Metadata
 → Chunk
 ```
 
-The shared abstraction is:
+공통 추상화:
 
-> Split a large space into addressable units, then use an index or mapping structure to reach the appropriate unit efficiently.
+> 큰 공간을 addressable unit으로 나눈 뒤 mapping/index 구조를 통해 필요한 unit으로 이동한다.
 
 ---
 
 ## 7. Chunk Overlap
 
-Chunk overlap repeats part of one chunk inside the next chunk.
-
-Example:
+인접 chunk가 일부 token을 공유하게 하는 방식이다.
 
 ```text
 Chunk 1
@@ -348,130 +210,96 @@ Chunk 1
 
 Chunk 2
           [401 ............... 900]
-
-Chunk 3
-                    [801 ............... 1300]
 ```
 
-The purpose is to reduce information loss at boundaries.
+목적:
 
-Without overlap:
+> chunk boundary에서 문맥이 끊기는 것을 완화한다.
 
-```text
-Chunk 1
-"This attraction has beautiful night lighting"
-
-Chunk 2
-"and is popular for evening walks."
-```
-
-With overlap, both chunks retain enough shared context to preserve the relationship.
-
-The trade-off is:
+Trade-off:
 
 ```text
-More overlap
+Overlap 증가
 → context preservation ↑
 → duplicate storage ↑
 → embedding cost ↑
 → duplicate retrieval ↑
 ```
 
-So overlap is a boundary-safety mechanism, not something that should be maximized.
-
-Structure-aware chunking can often reduce the need for large overlaps because meaningful boundaries are already preserved.
+Overlap은 보험이지 클수록 좋은 값이 아니다.
 
 ---
 
 ## 🔗 Connecting the Dots — Chunk Overlap × TCP Boundary Robustness
 
-Chunk overlap can also be connected conceptually to reliable network transport.
-
-TCP treats application data as a byte stream and splits it into segments for transmission.
-
-Modern TCP combines mechanisms such as:
-
-- cumulative acknowledgments
-- selective acknowledgment support
-- out-of-order receive buffering
-- retransmission
-
-The exact mechanisms differ from chunk overlap, but they share one broad engineering principle:
-
-> When a continuous stream is divided into smaller units, extra structure or redundancy is often added to reduce the cost of boundary loss or missing information.
-
-For chunking:
+TCP와 Chunk Overlap은 메커니즘 자체는 다르지만 공통된 engineering principle이 있다.
 
 ```text
-overlap
-→ protects semantic continuity across chunk boundaries
+Chunking
+→ overlap으로 semantic continuity 보호
+
+TCP
+→ sequence number + ACK/SACK + receive buffering
+→ reliable reconstruction 보호
 ```
 
-For TCP:
+공통점:
 
-```text
-sequence numbers + ACK/SACK + buffering
-→ protect reliable reconstruction across packet boundaries and loss
-```
-
-The domains are different, but both trade additional overhead for robustness.
+> 연속된 정보를 작은 단위로 나눌 때 경계 손실 비용을 줄이기 위한 추가 구조를 둔다.
 
 ---
 
-## Lesson 04 Summary
+## Lesson 04 요약
 
 ```text
 Canonicalize
    ↓
-Decompose mixed fields
+Mixed Field Decomposition
    ↓
-Decide whether chunking is necessary
+Chunking 필요 여부 판단
    ↓
-Choose chunking strategy
+전략 선택
    ├─ Fixed-size
    ├─ Structure-aware
    └─ Semantic
    ↓
-Add overlap only when boundary protection is needed
+필요할 때 Overlap
 ```
 
-The key lesson is:
+핵심:
 
-> Chunking is not a mandatory preprocessing step for every dataset. It is a retrieval-unit design decision that should be applied only when the existing structure is too large or semantically mixed.
+> Chunking은 모든 데이터에 강제하는 preprocessing이 아니라 retrieval unit을 설계하는 선택이다.
 
 ---
 
 ## Glossary
 
 ### Chunk
-A retrieval-sized unit created from a larger document or field.
+큰 문서에서 분리한 retrieval unit.
 
 ### Chunking
-The process of splitting a document into smaller retrieval units.
+문서를 더 작은 retrieval unit으로 나누는 과정.
 
 ### Fixed-size Chunking
-A chunking strategy that splits data using a fixed character or token length.
+고정 character/token 길이로 나누는 방식.
 
 ### Structure-aware Chunking
-A chunking strategy that respects source structure such as sections, paragraphs, JSON objects, or HTML nodes.
+section, paragraph, JSON object 같은 source structure를 보존하는 방식.
 
 ### Semantic Chunking
-A chunking strategy that splits when the meaning or topic changes.
+topic/meaning 변화 지점에서 나누는 방식.
 
 ### Chunk Overlap
-The intentional repetition of content between adjacent chunks to preserve context across boundaries.
-
-### Canonicalization
-The process of transforming heterogeneous source fields into a consistent normalized schema.
+인접 chunk 사이에 일부 내용을 중복시켜 문맥을 보존하는 방식.
 
 ### Field Decomposition
-The process of separating one mixed field into multiple fields with distinct semantic roles.
+서로 다른 의미가 섞인 하나의 field를 여러 semantic field로 분리하는 과정.
 
 ### Retrieval Unit
-The smallest independently searchable unit used by a retrieval system.
+독립적으로 검색 가능한 최소 단위.
 
 ### Context Preservation
-The degree to which important relationships and surrounding meaning survive preprocessing and chunking.
+preprocessing 후에도 중요한 문맥 관계가 유지되는 정도.
 
 ### Retrieval Precision
-The degree to which a retrieved unit focuses on the specific information relevant to the query.
+검색 단위가 query와 관련된 정보에 얼마나 집중되어 있는지.
