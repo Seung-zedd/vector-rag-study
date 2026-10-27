@@ -720,6 +720,65 @@ PASS / FAIL / Investigation
 
 핵심: **Ranking algorithm / Evaluation metric / Verification policy는 서로 다른 책임이다.**
 
+
+## 🔗 Connecting the Dots — Stanford Process Verification × RAG
+
+Stanford CS329A Robust Verification에서 다룬 **Process Verification**은 최종 결과뿐 아니라 중간 단계의 검증에 초점을 맞춘다.
+
+> ❓ **Q. Process Verification을 RAG Pipeline의 각 단계에 Verifier로 적용하고, 공통 추상화를 오버라이딩하는 구현체로 확장하면 어떨까?**
+>
+> **A. 타당한 설계 방향이다.** 다만 Process Verification은 *검증 방법론*이고, `Verifier`는 그 방법론을 구현하는 *컴포넌트 인터페이스*다. 다형성이나 Strategy Pattern을 통해 단계별 검증 정책을 분리할 수 있다.
+
+```text
+QueryRouter         → RouteVerifier
+                         ↓ PASS / FAIL / FALLBACK
+Retriever           → RetrievalVerifier
+                         ↓ PASS / FAIL / RETRY
+ContextAssembler    → ContextVerifier
+                         ↓ PASS / FAIL / REPAIR
+Generator           → AnswerVerifier
+                         ↓ PASS / FAIL / ESCALATE
+```
+
+핵심 목적은 *Failure Localization*: 최종 답변이 잘못되었을 때 어떤 단계에서 문제가 시작됐는지 추적하는 것.
+
+**Verifier / Stage Gate / Process Verification 구분**
+
+- Process Verification: 중간 단계의 정확성을 검사하는 검증 접근법
+- Verifier: 단계별 검증 로직을 담는 컴포넌트
+- Stage Gate: 검증 결과에 따라 계속 진행, 재시도, fallback, 중단을 결정하는 제어 정책
+- Execution trace / trajectory: 실제 실행 순서와 검증 증거를 기록한 데이터. Process Verification과 동일어가 아님
+
+모든 검증 실패가 곧 중단을 의미하는 것은 아니다. 검색 후보 부족은 fallback, 인용 누락은 context repair로 이어질 수 있다.
+
+### 👨‍💻 Implementation — 공통 Verifier 계약
+
+```python
+from dataclasses import dataclass
+from typing import Generic, Protocol, TypeVar
+
+T = TypeVar("T", contravariant=True)
+
+@dataclass(frozen=True)
+class VerificationResult:
+    passed: bool
+    reason: str
+    evidence: dict[str, object]
+
+class Verifier(Protocol[T]):
+    def verify(self, artifact: T) -> VerificationResult: ...
+
+class RetrievalVerifier:
+    def verify(self, artifact: "RetrievalResult") -> VerificationResult:
+        # 실제 retrieval invariant에 맞춰 구현
+        ...
+```
+
+검증 인터페이스를 통일하고, 검색 결과의 필드/출처/건수 같은 *실시간 검증 가능한 조건*은 Runtime Verifier가 담당한다. 반면 **MRR/nDCG는 보통 qrels가 필요한 Offline Evaluator**로 분리한다. 모든 phase에 클래스를 미리 만들기보다 실제 invariant가 발견된 단계부터 적용한다.
+
+참조: [Self-Improving Agent Systems — Robust Verification](https://github.com/Seung-zedd/self-improving-agent-systems/blob/main/docs/wiki/02-robust-verification.md)
+
+
 ## Lesson 05 현재 요약
 
 ```text
