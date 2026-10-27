@@ -2,7 +2,7 @@
 
 ## 1. Indexing Pipeline vs Query Pipeline
 
-RAG is easier to understand when it is divided into two pipelines.
+RAG는 크게 두 흐름으로 보면 이해하기 쉽다.
 
 ### Indexing Pipeline
 
@@ -18,7 +18,7 @@ Embedding
 Vector DB
 ```
 
-This is the preparation path that makes data searchable.
+검색 가능한 지식을 준비하는 경로다.
 
 ### Query Pipeline
 
@@ -38,59 +38,30 @@ LLM
 Answer
 ```
 
-The key distinction is:
-
-```text
-Indexing Pipeline
-→ prepares searchable knowledge
-
-Query Pipeline
-→ retrieves and uses that knowledge at request time
-```
-
 ---
 
-## 2. Retrieval, Augmentation, and Generation
-
-RAG stands for:
+## 2. Retrieval / Augmentation / Generation
 
 ```text
 Retrieval
-Augmented
+→ 근거를 찾는다
+
+Augmentation
+→ 찾은 근거로 LLM input을 보강한다
+
 Generation
+→ 보강된 context를 사용해 답을 만든다
 ```
 
-### Retrieval
-
-Find relevant external evidence.
-
-### Augmentation
-
-Turn the retrieved evidence into context that the LLM can use.
-
-### Generation
-
-Produce an answer from the augmented context.
-
-> ❓ **Q. Is Context Assembly basically the Augmentation step?**
+> ❓ **Q. Context Assembly가 사실상 Augmentation인가?**
 >
-> **A. Mostly yes.** Augmentation is the broader act of enriching the LLM input with retrieved external evidence, and Context Assembly is the main step where that evidence is selected, ordered, grouped, formatted, and inserted into the prompt.
-
-A useful mental model is:
-
-```text
-LLM parametric memory
-        +
-retrieved external evidence
-        ↓
-augmented context
-```
+> **A. 거의 그렇다.** Augmentation은 retrieval evidence로 LLM input을 보강하는 더 넓은 개념이고, Context Assembly는 그 evidence를 선택·정렬·그룹화·포맷팅해서 실제 prompt/context에 넣는 핵심 단계다.
 
 ---
 
 ## 3. Query Embedding → Retrieval → Context Assembly
 
-A semantic query path looks like:
+Semantic path:
 
 ```text
 User Query
@@ -104,10 +75,10 @@ Vector Search
 Top-K Documents
 ```
 
-Then Context Assembly transforms retrieved items into something useful for the LLM.
+Context Assembly:
 
 ```text
-Retrieved chunks
+Retrieved Chunks
    ↓
 selection
 ordering
@@ -118,231 +89,177 @@ source attribution
 LLM Context
 ```
 
-The distinction is:
+핵심:
 
-> Retrieval decides **what to bring**.  
-> Context Assembly decides **how to present it to the model**.
+> Retrieval은 **무엇을 가져올지**, Context Assembly는 **가져온 것을 모델에게 어떻게 제시할지** 결정한다.
 
 ---
 
-## 4. RAG Failure Decomposition
-
-A wrong RAG answer should not be treated as one undifferentiated failure.
-
-A useful decomposition is:
+## 4. RAG Failure 분해
 
 ```text
 Retrieval Failure
-→ needed evidence was not retrieved
+→ 필요한 근거를 못 찾음
 
 Context Assembly Failure
-→ evidence was retrieved but assembled poorly
+→ 근거는 찾았지만 context 구성 실패
 
 Generation Failure
-→ good evidence was provided but the LLM answered incorrectly
+→ 좋은 근거가 있는데 LLM이 잘못 답함
 ```
 
-A practical debugging trace is:
+Debugging:
 
 ```text
 User Query
    ↓
-What was retrieved?
+무엇이 retrieval 되었나?
    ↓
-What entered the final context?
+최종 context에 무엇이 들어갔나?
    ↓
-What answer did the LLM generate?
+LLM이 무엇을 생성했나?
 ```
 
 ---
 
 ## 🔗 Connecting the Dots — RAG Pipeline × Phase Verifier
 
-A RAG pipeline can be debugged similarly to a phase-based system with verifiers between stages.
+중간 산출물을 단계별로 검증한다.
 
 ```text
-User Query
-   ↓
-[Verifier]
-query interpretation / embedding
-
-Retrieval
-   ↓
-[Verifier]
-retrieved IDs / scores / filters
-
-Context Assembly
-   ↓
-[Verifier]
-chunks / order / truncation / duplication
-
-Generation
-   ↓
-[Verifier]
-format / grounding / semantic quality
+Query
+→ [Verifier]
+→ Retrieval
+→ [Verifier]
+→ Context Assembly
+→ [Verifier]
+→ Generation
+→ [Verifier]
 ```
 
-The general abstraction is:
-
-> Do not validate only the final output. Validate intermediate artifacts so that failure propagation can be localized.
-
-### Hard verifier vs soft verifier
-
-Many retrieval and context checks are hard-verifier friendly because they can be inspected objectively.
-
-Examples:
+상류 단계는 hard verifier 친화적이다.
 
 ```text
-retrieved document IDs
-similarity scores
-Top-K boundary
-filter conditions
+document ID
+similarity score
+Top-K
+filter condition
 token count
 duplicate ratio
 truncation
 source presence
 ```
 
-Generation is different.
+하류 generation으로 갈수록:
 
 ```text
-format / required fields
-→ hard verification possible
-
-faithfulness / usefulness / semantic correctness
-→ often requires soft verification
+faithfulness
+usefulness
+semantic correctness
 ```
 
-So RAG tends to become more soft-verifier-heavy toward the generation stage.
+같은 soft verification 비중이 커진다.
 
 ---
 
 ## 5. Retrieval Failure
 
-Retrieval failure means the needed evidence exists in the system but is not successfully returned.
+대표 원인:
 
-Common causes include:
-
-- wrong fields selected for embedding
-- poor chunking
-- query-document phrasing mismatch
-- Top-K too small
-- threshold too strict
-- filters removing the correct candidate
+- embedding할 필드 선택이 잘못됨
+- chunking 문제
+- query-document 표현 불일치
+- Top-K가 너무 작음
+- threshold가 너무 높음
+- filter가 정답 후보를 제거함
 - ANN approximation error
 
-A useful diagnostic order is:
+검증 순서:
 
 ```text
-1. Does the correct source data exist?
-2. Is the needed meaning present in the indexed representation?
-3. Is the query represented correctly?
-4. Did a filter remove the candidate?
-5. Did Top-K or threshold cut it off?
-6. Did ANN miss it?
+1. 정답 데이터가 실제로 존재하는가?
+2. indexed representation에 필요한 의미가 있는가?
+3. query representation이 정상인가?
+4. filter가 후보를 제거했는가?
+5. Top-K / threshold에서 잘렸는가?
+6. ANN이 놓쳤는가?
 ```
 
 ---
 
 ## 6. Context Assembly Failure
 
-Retrieval can succeed and the final answer can still fail because the context was assembled badly.
+대표 문제:
 
-Common problems:
+- 필요한 chunk truncation
+- 나쁜 ordering
+- duplicate
+- irrelevant noise
+- source 구분 불가
+- conflicting evidence
+- context는 문법적으로 맞지만 의미적으로 약함
 
-- a necessary chunk is truncated
-- chunk order is poor
-- duplicates consume context budget
-- irrelevant chunks add noise
-- sources are not distinguishable
-- conflicting facts are mixed together
-- context is technically valid but semantically weak
-
-A larger context window does not eliminate these issues.
-
-> ❓ **Q. If frontier models support very large context windows, is Context Assembly still important?**
+> ❓ **Q. 1M context window 같은 frontier model이면 Context Assembly가 덜 중요해지는가?**
 >
-> **A. Yes.** Large context windows increase capacity, but they do not eliminate retrieval noise, duplication, latency, cost, relevance dilution, or the risk that important evidence becomes harder to use effectively.
+> **A. 아니다.** context capacity가 늘어도 noise, duplicate, latency, cost, relevance dilution 문제는 남는다.
 
-The goal is not:
-
-```text
-fill as much context as possible
-```
-
-The better goal is:
+목표:
 
 ```text
-provide the smallest high-quality evidence set
-that is sufficient to answer the query
+context를 많이 채우기
+X
+
+답변에 충분한 최소 고품질 evidence 제공
+O
 ```
 
 ---
 
 ## 🔗 Connecting the Dots — Cubrain × Context Assembly
 
-Cubrain provides a useful concrete example of how Context Assembly can fail in two different ways:
+Context Assembly Failure는 두 층으로 볼 수 있다.
 
 ```text
-Context Assembly Failure
-├─ Mechanical Failure
-└─ Semantic / Prompt-Design Failure
+Mechanical Failure
+Semantic / Prompt-Design Failure
 ```
 
-### 1. Mechanical Failure Control
+### Mechanical Failure 통제
 
-Cubrain does not treat a PDF as one flat block of text.
-
-Instead, it extracts information through physically constrained regions and local context expansion.
-
-A generalized version of its pipeline is:
+Cubrain의 PDF context extraction:
 
 ```text
 PDF page
    ↓
-annotation coordinate detection
+annotation coordinate
    ↓
-target-region extraction
+target region
    ↓
-surrounding-context padding
+surrounding context padding
    ↓
 page-level grouping
    ↓
 LLM input
 ```
 
-Its context structure can be understood as a three-tier evidence model:
+3-tier context:
 
 ```text
 Tier 1 — Target Content
-→ the user-selected or visually marked content itself
+→ 사용자가 직접 표시한 내용
 
 Tier 2 — Underlying Text
-→ text directly beneath or associated with the target region
+→ target과 직접 연결된 text
 
 Tier 3 — Surrounding Context
-→ nearby paragraph-level context added through coordinate padding
+→ coordinate padding으로 확장한 주변 문맥
 ```
 
-This directly reduces mechanical Context Assembly failures such as:
-
-- target text being cut off
-- losing the local semantic neighborhood
-- mixing unrelated parts of the page
-- passing excessive irrelevant text
-- failing to associate an image or annotation with its nearby text
-
-This is conceptually similar to RAG systems that recover neighboring chunks or parent context around a retrieved chunk.
-
-### 2. Semantic / Prompt-Design Failure Control
-
-Cubrain also controls the semantic interpretation of assembled context through explicit prompt design.
-
-Its generation layer separates:
+### Semantic / Prompt-Design Failure 통제
 
 ```text
 System-level role
-→ "expert tutor"
+→ expert tutor
 
 User-level structured context
 → page context
@@ -352,120 +269,28 @@ User-level structured context
 → output format
 ```
 
-The prompt further defines how different evidence types should be interpreted.
+핵심:
 
-For example, a generalized version is:
-
-```text
-Highlight
-→ conceptual question
-
-Underline
-→ factual question
-
-Ink
-→ visual content + surrounding text
-
-FreeText
-→ user note + surrounding context
-```
-
-This addresses a different class of failure.
-
-Even if the mechanically assembled evidence is correct, the model can still fail if:
-
-- the evidence hierarchy is unclear
-- source roles are ambiguous
-- the model does not know how to interpret each annotation type
-- conflicting instructions exist
-- the output contract is underspecified
-- the model is not told how to synthesize multimodal evidence
-
-So Context Assembly quality depends on both:
-
-```text
-Mechanical assembly
-→ What evidence is physically included?
-
-Semantic assembly
-→ How is that evidence explained and constrained for the model?
-```
-
-The transferable lesson is:
-
-> A good Context Assembly layer is not only a string concatenator. It is both an evidence-construction layer and an instruction-design layer.
-
-### Shared abstraction
-
-```text
-large source
-   ↓
-select task-relevant evidence
-   ↓
-restore necessary local context
-   ↓
-group related evidence
-   ↓
-define evidence roles and instructions
-   ↓
-assemble final model input
-```
-
-Useful transferable ideas include:
-
-1. Do not pass the entire source when only a small region matters.
-2. Add nearby context when the selected region is too narrow.
-3. Batch related evidence when coherence matters.
-4. Reduce duplication before generation.
-5. Combine multiple evidence types when necessary.
-6. Explicitly define how the model should interpret each evidence type.
-7. Treat output format and reasoning constraints as part of Context Assembly.
+> 좋은 Context Assembly는 단순 문자열 concat이 아니라 evidence-construction layer이자 instruction-design layer다.
 
 ---
 
 ## 7. Multimodal Document Handling
 
-A retrieval system may ingest several kinds of unstructured documents.
-
 ```text
 Document
    ↓
 Type Detection
-   ├─ Text
-   │   → Text Parser
-   │
-   ├─ Text + Image
-   │   ├─ Text Parser
-   │   └─ OCR / Vision
-   │
-   └─ Image only
-       ├─ OCR
-       └─ Vision / Image Embedding
+   ├─ Text → Text Parser
+   ├─ Text + Image → Text Parser + OCR/Vision
+   └─ Image → OCR / Vision / Image Embedding
 ```
 
-OCR is appropriate when the information to retrieve is text embedded inside an image.
-
-Vision or image embeddings are more appropriate when the visual content itself carries meaning.
-
-A robust contextualized representation may combine:
-
-```text
-page title
-+
-surrounding text
-+
-alt text / caption
-+
-OCR result
-+
-vision-derived description
-```
+OCR은 이미지 속 **문자**를 뽑을 때 적합하고, Vision/Image Embedding은 이미지 자체의 시각 의미가 중요할 때 적합하다.
 
 ---
 
-## 👨‍💻 Implementation — Document Type Detection and Parsing
-
-One possible implementation idea is to separate document classification from parsing.
+## 👨‍💻 Implementation — Document Type Detection
 
 ```text
 DocumentIngestionService
@@ -480,15 +305,7 @@ DocumentParser
    └─ ImageParser
 ```
 
-A simple closed set can be represented as an enum:
-
-```text
-TEXT
-TEXT_IMAGE
-IMAGE
-```
-
-If format and content modality become separate concerns, keep them separate.
+format과 content modality는 섞지 않는 편이 좋다.
 
 ```text
 DocumentFormat
@@ -498,177 +315,84 @@ ContentType
 → TEXT / TEXT_IMAGE / IMAGE
 ```
 
-This avoids mixing file format with semantic content type.
-
 ---
 
 ## 8. Generation Failure
 
-Generation failure happens when retrieval and context construction are correct but the LLM still produces a wrong answer.
+Retrieval과 Context Assembly가 성공했는데 LLM이 잘못 답하는 경우다.
 
-Typical cases include:
+대표 사례:
 
-- ignoring the supplied context
-- misinterpreting the context
-- combining sources incorrectly
-- inventing unsupported facts
-- confusing stale and current information
-- mismatching claims and sources
+- context 무시
+- context 오해
+- source 잘못 결합
+- unsupported fact 생성
+- 최신/과거 정보 혼동
+- claim-source mismatch
 
-A central concept is **faithfulness**.
+핵심 개념은 **Faithfulness**다.
 
-> Faithfulness measures how well the generated answer stays supported by the supplied context.
-
-Example:
-
-```text
-Context:
-Admission fee is 5,000 KRW.
-
-Answer:
-Admission is 5,000 KRW and parking is free.
-```
-
-The parking claim is unsupported, so faithfulness is low.
+> 생성된 답변이 주어진 context에 얼마나 충실한가.
 
 ---
 
 ## 9. Lexical / Filter vs Semantic Retrieval
 
-Not every query should be routed through vector search.
-
-> ❓ **Q. If a query contains a clear entity name or exact identifier, would Lexical / Filter retrieval produce a more faithful answer than semantic search?**
+> ❓ **Q. 고유명사나 exact identifier가 명확하면 Lexical / Filter가 semantic search보다 적합한가?**
 >
-> **A. Often yes.** Exact identifiers, entity names, categories, dates, codes, and structured attributes are usually better handled by exact or lexical retrieval than by semantic similarity.
-
-Example:
-
-```text
-"A 관광지는 월요일에 갈 수 있어?"
-```
-
-The entity is already explicit.
-
-```text
-entity = "A 관광지"
-```
-
-A more precise path may be:
-
-```text
-entity match
-   ↓
-exact / lexical lookup
-   ↓
-structured fields or payload
-   ↓
-answer
-```
-
-Lexical retrieval does not guarantee faithfulness by itself, but it can reduce ambiguity and improve the quality of the evidence passed to generation.
+> **A. 대체로 그렇다.** exact identifier, entity name, category, date, code 같은 정보는 semantic similarity보다 exact/lexical retrieval로 처리하는 편이 안정적이다.
 
 ---
 
-## 10. Query Analysis and Routing
+## 10. Query Analysis & Routing
 
-> ❓ **Q. Should every user query be embedded immediately?**
+> ❓ **Q. 모든 user query를 무조건 embedding해야 하는가?**
 >
-> **A. No.** Query structure can be analyzed first so that exact, lexical, semantic, and hybrid parts are handled differently.
-
-A simple routing model is:
+> **A. 아니다.** query structure를 먼저 분석하고 exact / lexical / semantic / hybrid path로 나눌 수 있다.
 
 ```text
 User Query
    ↓
 Query Analysis
-   ├─ Entity / ID / exact keyword detected
+   ├─ Entity / ID / exact keyword
    │    → Lexical / Filter
-   │
-   ├─ Semantic intent dominant
+   ├─ Semantic intent
    │    → Vector Search
-   │
-   └─ Both are present
+   └─ 둘 다 존재
         → Hybrid Retrieval
 ```
 
-Examples:
-
-```text
-"contentId 12345"
-→ exact lookup
-
-"A 관광지 운영시간"
-→ entity match + structured lookup
-
-"아이와 가기 좋은 조용한 실내 장소"
-→ semantic retrieval
-
-"부산 광안리에서 야경 좋은 곳"
-→ lexical/filter + semantic retrieval
-```
-
-The key idea is:
-
-> Query embedding should be a deliberate routing decision, not an automatic first step for every request.
-
 ---
 
-## 👨‍💻 Implementation — QueryRouter and Separation of Read vs Write Paths
-
-A possible implementation abstraction is a high-level query router.
+## 👨‍💻 Implementation — QueryRouter
 
 ```text
 User Query
    ↓
 QueryRouter
-   ├─ Exact / Lexical path
+   ├─ Exact / Lexical
    │    → LexicalSearchService
-   │
-   ├─ Semantic path
-   │    → RetrievalService
-   │         ↓
-   │      VectorStore
-   │
-   └─ Hybrid path
+   ├─ Semantic
+   │    → RetrievalService → VectorStore
+   └─ Hybrid
         → HybridRetrievalService
-             ├─ LexicalSearchService
-             └─ RetrievalService
 ```
 
-This should remain separate from ingestion.
+Write path와 read path도 분리한다.
 
 ```text
-Write Path
+Write
 → IngestionService
-→ parse / normalize / chunk / embed / store
 
-Read Path
-→ QueryRouter
-→ lexical / semantic / hybrid retrieval
+Read
+→ QueryRouter → Retrieval
 ```
-
-This avoids embedding and vector search for queries that can be answered more efficiently with exact or structured retrieval.
 
 ---
 
-
 ## 🔗 Connecting the Dots — Query as Highlight × Anchor-First Retrieval
 
-A useful way to reinterpret a user query is to treat it like a virtual highlight.
-
-In a PDF annotation system, a highlight already provides a precise anchor:
-
-```text
-Highlight
-   ↓
-Target Region
-   ↓
-Underlying Text
-   ↓
-Surrounding Context
-```
-
-In retrieval, the query does not initially have a physical location, so the first task is to discover an anchor inside the indexed data.
+Query를 가상의 Highlight처럼 볼 수 있다.
 
 ```text
 User Query
@@ -680,57 +404,40 @@ Matched Content Region
 Tiered Context Expansion
 ```
 
-A practical three-tier mapping is:
+3-tier mapping:
 
 ```text
 Tier 1
-→ directly matched entity / field / phrase
+→ 직접 매칭된 entity / field / phrase
 
 Tier 2
-→ the containing object or closely related fields
+→ 같은 object의 밀접한 field
 
 Tier 3
-→ broader parent, category, source, or neighboring context
+→ parent / category / source / nearby context
 ```
-
-This creates a useful bridge between annotation-based context extraction and retrieval-based context construction.
 
 ### Lexical-first Cascade
 
-Exact and lexical signals are usually more deterministic than semantic similarity.
-
-A good default routing strategy is therefore:
-
 ```text
-User Query
-   ↓
 Exact / Entity / Lexical Anchor Search
    ↓
 High-confidence anchor?
-   ├─ YES
-   │    → Local Context Expansion
-   │    → Answer / downstream generation
-   │
-   └─ NO
-        → Semantic Retrieval
-        → Vector Search
+   ├─ YES → Local Context Expansion
+   └─ NO  → Semantic Retrieval → Vector Search
 ```
 
-This does not mean lexical retrieval is universally better than embedding.
+핵심:
 
-Instead:
-
-> Use deterministic evidence first when it is sufficient, and use semantic retrieval when lexical evidence cannot express the user's intent.
-
-This can reduce unnecessary embedding calls, vector-search latency, and ambiguity for exact queries.
+> deterministic evidence로 충분하면 먼저 사용하고, 표현 차이 때문에 lexical이 부족할 때 semantic retrieval로 내려간다.
 
 ---
 
-## 👨‍💻 Implementation — JSON Logical Regions Instead of Artificial Coordinates
+## 👨‍💻 Implementation — JSON Logical Region
 
-For JSON-centric crawling pipelines, introducing artificial physical coordinates is usually unnecessary.
+JSON 중심 시스템에서는 억지로 physical coordinate를 만들 필요가 없다.
 
-A JSON document already contains structural location information such as:
+JSON에는 이미:
 
 ```text
 JSONPath
@@ -740,44 +447,20 @@ array index
 parent-child relationship
 ```
 
-Therefore, rather than pretending that JSON items are PDF pages with synthetic x/y coordinates, it is simpler to use logical regions.
-
-Example:
+이 존재한다.
 
 ```text
 $.items[42].title
 → anchor
 
 $.items[42]
-→ local object region
+→ local region
 
-parent/category/source metadata
+parent/category/source
 → broader context
 ```
 
-A compact architecture can be:
-
-```text
-QueryRouter
-   ↓
-Lexical / Filter Anchor Detection
-   ↓
-JsonRegionResolver
-   ↓
-3-tier Context Expansion
-   ↓
-Semantic Retrieval fallback when needed
-```
-
-This preserves the useful abstraction from coordinate-based extraction without introducing unnecessary geometry.
-
-The important abstraction is not:
-
-```text
-physical clipping box
-```
-
-but:
+핵심 추상화:
 
 ```text
 Anchor
@@ -785,91 +468,69 @@ Anchor
 → Context Expansion
 ```
 
-When the ingestion domain is predominantly JSON-based, a single JSON-oriented resolver is usually preferable to prematurely building multiple format-specific resolvers.
+---
 
-## Lesson 03 Summary
+## Lesson 03 요약
 
 ```text
 Indexing
-→ prepare searchable knowledge
+→ 검색 가능한 지식 준비
 
 Query Analysis
-→ decide how the request should be routed
+→ 어떤 retrieval path를 사용할지 결정
 
 Retrieval
-→ find evidence
+→ 근거 찾기
 
 Context Assembly
-→ construct model-ready evidence
+→ LLM이 쓰기 좋은 근거 구성
 
 Generation
-→ produce the answer
+→ 답변 생성
 
 Verification
-→ inspect each stage independently
+→ 각 단계의 상태 검증
 ```
-
-The key lesson is:
-
-> RAG quality is not determined by vector search alone. It depends on routing, retrieval, context construction, generation, and verification working together.
 
 ---
 
 ## Glossary
 
 ### Indexing Pipeline
-The offline or pre-query process that prepares source data for retrieval.
+검색 전 source data를 retrieval 가능하게 준비하는 과정.
 
 ### Query Pipeline
-The runtime process that handles a user request, retrieves evidence, assembles context, and generates an answer.
-
-### Augmentation
-The process of enriching an LLM input with externally retrieved evidence.
+runtime에서 query를 처리하고 근거를 찾고 답변을 만드는 과정.
 
 ### Context Assembly
-The process of selecting, ordering, grouping, formatting, and inserting retrieved evidence into the model input.
+retrieved evidence를 선택·정렬·그룹화·포맷팅해 LLM input으로 만드는 과정.
 
 ### Retrieval Failure
-A failure where relevant evidence exists but is not successfully retrieved.
+관련 근거가 존재하지만 retrieval하지 못한 실패.
 
 ### Context Assembly Failure
-A failure where evidence is retrieved but poorly constructed into the final model context.
+근거는 찾았지만 context를 잘못 구성한 실패.
 
 ### Generation Failure
-A failure where sufficient context is provided but the LLM still produces an incorrect or unsupported answer.
+충분한 context가 있지만 LLM이 잘못 생성한 실패.
 
 ### Faithfulness
-The degree to which a generated answer is supported by the supplied context.
+답변이 supplied context에 얼마나 충실한지를 나타내는 개념.
 
 ### Hard Verifier
-A verifier that can evaluate a condition using deterministic or objectively measurable rules.
+deterministic/objective rule로 판정 가능한 verifier.
 
 ### Soft Verifier
-A verifier that evaluates semantic quality, usefulness, or correctness where deterministic pass/fail rules are insufficient.
+semantic quality처럼 규칙만으로 판정하기 어려운 verifier.
 
 ### Query Routing
-The process of deciding whether a query should use exact, lexical, semantic, or hybrid retrieval.
-
-### OCR
-Optical Character Recognition. A technique for extracting textual content from images.
-
-### Multimodal
-A setting in which multiple information types such as text and images are processed together.
-
-### Mechanical Context Assembly
-The deterministic construction of model input through selection, ordering, grouping, truncation control, deduplication, region extraction, and token-budget management.
-
-### Semantic Context Assembly
-The instruction-level design that tells the model how to interpret, prioritize, and synthesize the evidence placed into context.
-
-### Evidence Hierarchy
-An explicit ordering or role assignment that distinguishes primary evidence from supporting or surrounding context.
+query를 exact/lexical/semantic/hybrid path 중 어디로 보낼지 결정하는 과정.
 
 ### Anchor
-A precise lexical, structural, or semantic point used as the starting location for context expansion.
+context expansion의 시작점이 되는 정확한 lexical/structural/semantic 지점.
 
 ### Logical Region
-A structurally bounded area of data, such as a JSON object or field group, used instead of physical coordinates.
+JSON object/field group처럼 구조적으로 경계가 있는 데이터 영역.
 
 ### Lexical-first Cascade
-A routing strategy that attempts exact or lexical retrieval first and falls back to semantic retrieval when deterministic matching is insufficient.
+exact/lexical search를 먼저 시도하고 부족할 때 semantic retrieval로 fallback하는 전략.
