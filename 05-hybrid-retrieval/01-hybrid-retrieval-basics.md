@@ -232,6 +232,180 @@ Filter
 
 ---
 
+
+## 7. Query Decomposition
+
+Hybrid Retrieval의 핵심은 user query를 한 덩어리로 보지 않고 역할별 signal로 분해하는 것이다.
+
+예:
+
+```text
+"부산 광안리에서 조용하고 야경이 좋은 카페"
+```
+
+가능한 분해:
+
+```text
+부산
+→ Hard Constraint
+→ Filter
+
+광안리
+→ Hard Constraint / Exact Term
+→ Filter 또는 Lexical
+
+카페
+→ Category
+→ Filter 또는 Lexical
+
+조용한
+→ Soft Preference
+→ Semantic Search
+
+야경이 좋은
+→ Soft Preference
+→ Semantic Search
+```
+
+중요:
+
+> 품사 자체보다 query intent와 constraint 성격을 기준으로 분해한다.
+
+같은 명사라도 역할이 달라질 수 있다.
+
+```text
+"카페만 보여줘"
+→ Filter
+
+"이름에 카페가 들어간 곳"
+→ Lexical
+
+"커피 마시기 좋은 곳"
+→ Semantic
+```
+
+---
+
+## 8. QueryRouter Confidence와 Fallback
+
+QueryRouter는 단순 binary 분기기가 아니라 route confidence를 기반으로 retrieval path를 선택할 수 있다.
+
+```text
+User Query
+   ↓
+Query Analysis
+   ↓
+Confidence Estimation
+   ├─ High Lexical Confidence
+   │    → Lexical / Filter
+   ├─ High Semantic Confidence
+   │    → Vector Search
+   └─ Ambiguous
+        → Hybrid
+```
+
+예:
+
+```text
+Exact entity confidence = 0.95
+Semantic intent confidence = 0.20
+→ Lexical 우선
+
+Exact entity confidence = 0.35
+Semantic intent confidence = 0.82
+→ Semantic 우선
+
+Exact entity confidence = 0.58
+Semantic intent confidence = 0.63
+→ Hybrid
+```
+
+Fallback도 중요하다.
+
+```text
+Lexical
+   ↓
+결과 0건 또는 score 부족
+   ↓
+Semantic Fallback
+```
+
+즉 Lexical-first Cascade를 다음처럼 구체화할 수 있다.
+
+```text
+1. Exact / Filter
+2. Lexical
+3. Semantic
+4. Hybrid / Rerank
+```
+
+---
+
+## 🔗 Connecting the Dots — Route Confidence × Weighted Signal Aggregation
+
+Route Confidence도 여러 signal의 가중합으로 표현할 수 있다.
+
+예:
+
+```text
+L(x)
+→ lexical / exact signal strength
+
+S(x)
+→ semantic intent strength
+```
+
+```text
+R(x) = αL(x) + βS(x)
+```
+
+실전에서는 lexical confidence와 semantic confidence를 별도로 두는 편이 더 해석하기 쉽다.
+
+```text
+C_lexical(x)
+= a1 * entity_match
++ a2 * exact_keyword_match
++ a3 * filterability
++ a4 * ID_pattern
+
+C_semantic(x)
+= b1 * intent_abstractness
++ b2 * semantic_preference
++ b3 * paraphrase_need
++ b4 * lexical_match_weakness
+```
+
+Routing decision:
+
+```text
+C_lexical >> C_semantic
+→ Lexical / Filter
+
+C_semantic >> C_lexical
+→ Semantic
+
+둘이 비슷함
+→ Hybrid
+```
+
+이 구조는 Weighted Fusion과 수학적으로 유사하지만 적용 위치가 다르다.
+
+```text
+Before Retrieval
+→ Route Confidence
+→ 어떤 retrieval path를 탈지 결정
+
+After Retrieval
+→ Weighted Fusion
+→ 여러 retrieval 결과를 어떻게 합칠지 결정
+```
+
+공통 추상화:
+
+> 여러 signal을 가중합으로 합성해 하나의 의사결정 score를 만든다.
+
+초기에는 fixed weight로 시작하고, query log와 evaluation dataset이 쌓이면 α, β 또는 각 feature weight를 조정할 수 있다.
+
 ## Lesson 05 현재 요약
 
 ```text
@@ -285,3 +459,15 @@ embedding vector의 의미적 유사도를 이용해 ranking하는 검색.
 
 ### Soft Preference
 반드시 만족할 필요는 없지만 ranking에 영향을 주는 선호 조건.
+
+### Query Decomposition
+user query를 hard constraint, lexical term, semantic preference 등 역할별 signal로 분해하는 과정.
+
+### Route Confidence
+특정 query를 lexical, semantic, hybrid 등의 retrieval path로 보낼 때의 신뢰도.
+
+### Fallback
+선택한 retrieval path의 결과가 부족할 때 다른 retrieval strategy로 전환하는 동작.
+
+### Weighted Signal Aggregation
+여러 signal을 가중합 등으로 결합해 하나의 score 또는 decision value를 만드는 방식.
