@@ -1,119 +1,84 @@
-# Lesson 02 — ANN, Top-K, and HNSW
+# Lesson 02 — ANN, Top-K, HNSW
 
-## 1. Exact Search vs Approximate Nearest Neighbor (ANN)
+## 1. Exact Search vs ANN
 
-If a vector database contains only a small number of vectors, the simplest search strategy is to compare the query vector against every stored vector.
+Vector DB에 저장된 모든 벡터와 query vector를 하나씩 비교하면 **Exact Search**다.
 
 ```text
 q ↔ d1
 q ↔ d2
-q ↔ d3
 ...
 q ↔ dN
 ```
 
-This is an **exact search**.
-
-If each vector has dimensionality `D` and there are `N` vectors, a brute-force scan is roughly:
+벡터 차원이 D, 개수가 N이면 brute-force scan은 대략:
 
 ```text
 O(N × D)
 ```
 
-As `N` grows, this becomes expensive.
-
-Approximate Nearest Neighbor (ANN) search avoids checking every vector. Instead, it searches a much smaller candidate set and accepts a small possibility of missing the mathematically exact nearest neighbor.
+ANN(Approximate Nearest Neighbor)은 모든 벡터를 비교하지 않고 유망한 후보군만 탐색한다.
 
 ```text
 Exact Search
-→ maximum accuracy
-→ potentially expensive
+→ 최대 정확도
+→ 비용 큼
 
 ANN
-→ much faster
-→ may lose a small amount of recall
+→ 훨씬 빠름
+→ 약간의 recall 손실 가능
 ```
 
-ANN does not replace cosine similarity, L2 distance, or dot product.
+중요:
 
-Those are **distance/similarity metrics**.
+```text
+Cosine / L2 / Dot Product
+→ 거리·유사도 metric
 
-ANN is a **search strategy** for finding promising candidates efficiently.
+ANN
+→ 후보를 효율적으로 찾는 search strategy
+```
 
 ---
 
 ## 2. Top-K
 
-Top-K means returning only the K highest-ranked retrieval results.
-
-Example:
+Top-K는 검색 결과 중 상위 K개만 반환하는 정책이다.
 
 ```text
 d1 = 0.93
 d2 = 0.88
 d3 = 0.81
 d4 = 0.74
-d5 = 0.69
 ```
 
-If:
+Top-K=3이면 d1, d2, d3만 반환한다.
+
+Trade-off:
 
 ```text
-Top-K = 3
+K 너무 작음
+→ relevant evidence 누락
+
+K 너무 큼
+→ noise 증가
 ```
 
-the system returns:
-
-```text
-d1, d2, d3
-```
-
-The key trade-off is:
-
-```text
-K too small
-→ relevant evidence may be missed
-
-K too large
-→ irrelevant evidence and noise may increase
-```
-
-So Top-K is a balance between **recall** and **noise**.
-
-A practical system may combine Top-K with a similarity threshold.
-
-```text
-Top-K = 5
-threshold = 0.75
-```
-
-Then:
-
-```text
-0.91 → keep
-0.87 → keep
-0.79 → keep
-0.72 → drop
-0.61 → drop
-```
-
-Top-K controls the maximum number of candidates, while the threshold controls the minimum acceptable relevance.
+Top-K와 similarity threshold를 함께 사용할 수도 있다.
 
 ---
 
 ## 🔗 Connecting the Dots — Bayesian Inference × Adaptive Top-K
 
-> ❓ **Q. Can Bayesian inference be used to adaptively balance recall and noise when selecting Top-K documents?**
+> ❓ **Q. Bayesian inference로 recall과 noise를 균형 있게 조절하는 adaptive Top-K를 만들 수 있을까?**
 >
-> **A. Yes.** A more natural Bayesian formulation is not to predict K directly, but to estimate the posterior probability that each retrieved document is relevant.
-
-For example:
+> **A. 가능하다.** K를 직접 예측하기보다 각 retrieved document가 relevant할 posterior probability를 추정하는 편이 자연스럽다.
 
 ```text
 P(relevant | retrieval features)
 ```
 
-Possible features include:
+가능한 feature:
 
 - cosine similarity
 - BM25 score
@@ -121,7 +86,7 @@ Possible features include:
 - metadata match
 - query-document length relation
 
-A Bayesian logistic model could estimate:
+예:
 
 ```text
 d1 → P(relevant) = 0.97
@@ -130,98 +95,33 @@ d3 → P(relevant) = 0.78
 d4 → P(relevant) = 0.43
 ```
 
-Then the system can select documents according to a posterior decision rule.
+threshold를 적용하면 K가 고정값이 아니라 결과로 나타날 수 있다.
 
-```text
-P(relevant) > 0.7
-```
-
-This makes the effective value of K emerge dynamically from the model.
-
-Bayesian inference adds something especially useful: **uncertainty**.
-
-Two documents can have the same posterior mean but very different uncertainty:
-
-```text
-d3
-mean relevance = 0.75
-credible interval = [0.72, 0.78]
-
-d4
-mean relevance = 0.75
-credible interval = [0.35, 0.96]
-```
-
-A stricter system might require a posterior lower bound to exceed a threshold.
-
-This connects retrieval design with uncertainty-aware decision making.
-
-A practical progression is:
-
-```text
-Fixed Top-K
-   ↓
-Top-K + threshold
-   ↓
-reranker
-   ↓
-query-dependent / adaptive K
-   ↓
-probabilistic relevance modeling
-```
+Bayesian 방식의 장점은 **uncertainty**도 표현할 수 있다는 것이다.
 
 ---
 
-> ❓ **Q. ANN and HNSW both seem to search only promising candidates instead of scanning everything. What is the difference?**
+> ❓ **Q. ANN과 HNSW 모두 유망한 후보만 찾는 것처럼 보이는데 차이가 무엇인가?**
 >
-> **A. ANN is the broader search strategy, while HNSW is one concrete algorithm/index structure used to implement ANN.**
->
-> ANN says:
->
-> ```text
-> Do not compare against every vector.
-> Approximate the nearest neighbors efficiently.
-> ```
->
-> HNSW says:
->
-> ```text
-> Build a hierarchical proximity graph.
-> Navigate through promising neighbors.
-> Refine the search as you descend through layers.
-> ```
->
-> So the relationship is:
->
-> ```text
-> ANN
-> = the general problem-solving strategy
->
-> HNSW
-> = a graph-based implementation of ANN
-> ```
->
-> HNSW is one ANN approach among several possible methods.
+> **A. ANN은 큰 범주의 search strategy이고, HNSW는 ANN을 구현하는 구체적인 graph-based algorithm/index다.**
+
+```text
+ANN
+= 전체를 다 보지 않고 근사적으로 nearest neighbor를 찾는 전략
+
+HNSW
+= 계층적 proximity graph를 탐색하는 ANN 구현
+```
 
 ---
 
 ## 3. HNSW
 
-HNSW stands for **Hierarchical Navigable Small World**.
+HNSW = **Hierarchical Navigable Small World**
 
-Its core idea is:
+핵심:
 
-> Do not compare the query against every vector. Navigate through a graph of nearby vectors and move toward promising regions.
-
-A simplified graph may look like:
-
-```text
-d1 ─── d7 ─── d20
-       │       │
-      d9 ─── d31
-```
-
-HNSW adds multiple layers.
+> 모든 벡터를 비교하지 말고, 인접한 벡터들의 graph를 따라가며 query와 가까운 region으로 이동한다.
 
 ```text
 Layer 2        A -------- F
@@ -231,139 +131,83 @@ Layer 1      A -- C -- F -- H
 Layer 0    A-B-C-D-E-F-G-H-I-J
 ```
 
-The upper layers are sparse and allow long jumps.
+- upper layer: sparse, long jump
+- lower layer: dense, local refinement
 
-Lower layers are denser and allow finer local search.
-
-A simplified search path is:
-
-```text
-enter at upper layer
-        ↓
-move toward a closer node
-        ↓
-descend to a lower layer
-        ↓
-search more locally
-        ↓
-return nearest candidates
-```
-
-A useful analogy is road navigation:
+Search 흐름:
 
 ```text
-highway
-→ major road
-→ local road
-→ destination neighborhood
+upper layer 진입
+   ↓
+더 가까운 node로 이동
+   ↓
+lower layer로 내려감
+   ↓
+local search
+   ↓
+nearest candidates 반환
 ```
 
-Instead of checking every possible road, the system uses structure to reach the promising region quickly.
+도로 비유:
 
-### HNSW is not a distance metric
+```text
+고속도로
+→ 간선도로
+→ 골목
+→ 목적지
+```
+
+### HNSW는 거리 metric이 아니다
 
 ```text
 Cosine / L2 / Dot Product
-→ measure vector closeness
+→ 얼마나 가까운지 측정
 
 HNSW
-→ controls how candidate vectors are explored
-```
-
-So the conceptual separation is:
-
-```text
-Similarity metric
-- cosine
-- L2
-- dot product
-
-Search strategy / index
-- exact scan
-- ANN
-- HNSW
+→ 어떤 후보를 어떤 경로로 탐색할지 결정
 ```
 
 ---
 
 ## 🔗 Connecting the Dots — HNSW × Branch-Based Search × Routing
 
-HNSW follows a general optimization pattern that also appears in tree search, graph search, and routing.
+공통 추상화:
 
-### Brute force vs structured navigation
-
-```text
-Brute force
-→ inspect every candidate
-
-Structured search
-→ follow promising branches or neighbors
-```
-
-HNSW is not literally a tree, but it uses the same high-level idea:
-
-> Do not inspect the entire search space. Use structure to navigate toward promising regions.
-
-It also resembles routing.
+> 전체 search space를 전부 조사하지 말고 구조를 이용해 유망한 region으로 이동한다.
 
 ```text
 Routing
 current node
-→ choose next hop
-→ move closer to destination
-```
+→ next hop
+→ destination에 가까워짐
 
-```text
 HNSW
 current vector node
-→ choose a better neighbor
-→ move closer to the query region
+→ better neighbor
+→ query region에 가까워짐
 ```
 
-The objective differs:
-
-```text
-Network routing
-→ latency, hop count, cost, reliability
-
-HNSW
-→ vector similarity / distance
-```
-
-But the shared abstraction is efficient navigation through a structured search space.
+목적 함수는 다르지만 구조적 탐색이라는 점은 같다.
 
 ---
 
-## Lesson 02 Summary
+## Lesson 02 요약
 
 ```text
 Exact Search
-→ compare against every vector
+→ 모든 vector 비교
 
 ANN
-→ search only promising candidates
+→ 유망 후보만 탐색
 
 Top-K
-→ return only the highest-ranked K results
+→ 상위 K개 반환
 
 Top-K + threshold
-→ cap the count and reject weak matches
+→ 개수와 최소 relevance를 함께 통제
 
 HNSW
-→ hierarchical graph navigation for ANN
-```
-
-The important conceptual separation is:
-
-```text
-metric
-→ how closeness is measured
-
-search strategy
-→ how candidate vectors are found
-
-ranking policy
-→ how many results are returned
+→ hierarchical graph를 사용하는 ANN
 ```
 
 ---
@@ -371,37 +215,31 @@ ranking policy
 ## Glossary
 
 ### Exact Search
-A search strategy that compares the query against all candidate vectors to guarantee exact nearest-neighbor results.
+모든 후보 벡터를 비교해 exact nearest neighbor를 보장하는 방식.
 
 ### ANN
-Approximate Nearest Neighbor. A search strategy that reduces search cost by exploring only a subset of candidates while accepting a small possible loss in recall.
+전체 후보를 다 보지 않고 nearest neighbor를 근사적으로 찾는 검색 전략.
 
 ### Top-K
-The maximum number of highest-ranked retrieval results returned by a search.
+상위 K개의 검색 결과만 반환하는 정책.
 
 ### Similarity Threshold
-A minimum similarity or relevance score required for a result to be kept.
+결과로 유지하기 위한 최소 relevance/similarity 기준.
 
 ### Recall
-The proportion of relevant results successfully retrieved from all relevant results that exist.
+존재하는 relevant result 중 실제로 찾아낸 비율.
 
 ### Noise
-Retrieved results that are irrelevant or weakly related to the query.
+query와 관련성이 낮거나 불필요한 검색 결과.
 
 ### HNSW
-Hierarchical Navigable Small World. A graph-based ANN index that uses multiple layers to move quickly through the search space.
-
-### Neighbor
-A graph node connected to another node because it is considered nearby according to the index construction process.
-
-### Search Layer
-One hierarchical level in HNSW. Upper layers are sparse and support long-range navigation; lower layers are denser and support local refinement.
+계층형 graph를 사용하는 ANN index.
 
 ### Candidate Set
-The subset of vectors considered during ANN search instead of scanning the entire dataset.
+전체 데이터 대신 ANN이 실제로 검토하는 후보 집합.
 
 ### Posterior Probability
-In Bayesian inference, the updated probability of a hypothesis after observing evidence.
+관측된 evidence를 반영한 이후의 Bayesian probability.
 
 ### Credible Interval
-A Bayesian interval that describes a range of plausible parameter values under the posterior distribution.
+posterior distribution에서 plausible parameter range를 나타내는 구간.
