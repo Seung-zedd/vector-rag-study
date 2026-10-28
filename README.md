@@ -62,6 +62,20 @@ Vector Database와 Retrieval-Augmented Generation(RAG)을 기초부터 이해하
 
 ---
 
+## References 작성 원칙
+
+각 Lesson은 **Glossary 다음, 문서의 맨 아래에 `## References`**를 둡니다.
+
+- **Primary Sources:** 논문, 원저작물, 학술 자료
+- **Official Documentation:** 공식 기술 문서 및 표준
+- **Related Public Study / Further Reading:** 실제로 연결한 공개 학습 노트와 보조 자료
+- 관련성 있는 공개 자료만 기재하며, 출처를 확인하지 않은 내용을 특정 논문의 주장으로 표시하지 않습니다.
+- 원문을 장문 복제하지 않고 독자적인 설명을 작성합니다. **인용·출처 표시는 사용 허가나 기밀 공개 승인을 대신하지 않습니다.**
+- 개인적인 가설, 비유, 설계 응용은 원자료의 주장과 구분합니다.
+- 회사의 비공개 자산이나 업무상 결과물은 출처 기재 여부와 무관하게 기존 **공개 및 저작권 판단 원칙**을 적용합니다.
+
+---
+
 ## License
 
 이 레포는 [MIT License](./LICENSE)를 따릅니다.
