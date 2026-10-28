@@ -303,3 +303,16 @@ preprocessing 후에도 중요한 문맥 관계가 유지되는 정도.
 
 ### Retrieval Precision
 검색 단위가 query와 관련된 정보에 얼마나 집중되어 있는지.
+
+---
+
+## References
+
+### Primary Sources
+- Lewis, P. et al. (2020). [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — 검색 단위와 근거 기반 생성의 배경.
+
+### Official Documentation
+- [LangChain — Recursive text splitter](https://github.com/langchain-ai/docs/blob/main/src/oss/integrations/splitters/recursive_text_splitter.mdx) — 구조 경계를 고려한 문서 분할과 chunk size.
+- [LangChain — Text splitters](https://docs.langchain.com/oss/python/integrations/splitters) — 텍스트 분할 기법의 실용적 개요.
+
+> **구분:** Field Decomposition과 Chunking의 결합 및 OS/TCP 비유는 개인적인 개념 연결이다.
