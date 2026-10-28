@@ -321,3 +321,14 @@ source마다 다른 필드명/값을 일관된 표현으로 정규화하는 과�
 
 ### Document Frequency
 특정 term을 포함하는 문서 수.
+
+---
+
+## References
+
+### Primary Sources
+- Reimers, N. & Gurevych, I. (2019). [Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks](https://arxiv.org/abs/1908.10084) — 문장 임베딩과 유사도 검색의 기초.
+- Robertson, S. & Zaragoza, H. (2009). [The Probabilistic Relevance Framework: BM25 and Beyond](https://www.nowpublishers.com/article/Details/INR-019) — BM25 및 어휘 기반 관련성 평가.
+
+### Official Documentation
+- [Elasticsearch — Full-text search](https://www.elastic.co/docs/solutions/search/full-text) — Lexical Search의 실무적 개념.
