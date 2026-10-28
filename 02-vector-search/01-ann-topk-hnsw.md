@@ -243,3 +243,14 @@ query와 관련성이 낮거나 불필요한 검색 결과.
 
 ### Credible Interval
 posterior distribution에서 plausible parameter range를 나타내는 구간.
+
+---
+
+## References
+
+### Primary Sources
+- Malkov, Y. A. & Yashunin, D. A. (2018). [Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs](https://arxiv.org/abs/1603.09320) — HNSW 원 논문.
+- Johnson, J., Douze, M. & Jégou, H. (2017). [Billion-scale similarity search with GPUs](https://arxiv.org/abs/1702.08734) — 대규모 벡터 유사도 검색.
+
+### Official Documentation
+- [Faiss — Documentation](https://faiss.ai/) — ANN 및 벡터 검색 구현 참고.
