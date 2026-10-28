@@ -670,14 +670,39 @@ MRR = (1 + 1/2 + 1/4) / 3 ≈ 0.583
 
 nDCG는 **여러 문서의 관련성 등급과 순위**를 함께 반영한다.
 
-```text
-rel_i = i번째 검색 결과의 관련성 등급
-예: 3=매우 관련, 2=관련, 1=약간 관련, 0=무관
+$rel_i$는 검색 결과의 $i$번째 문서에 부여한 관련성 등급이다.
 
-DCG@K = Σ(i=1..K) (2^rel_i - 1) / log₂(i+1)
-IDCG@K = 이상적인 정렬 결과의 DCG@K
-nDCG@K = DCG@K / IDCG@K
-```
+- $rel_i = 3$: 매우 관련 있음
+- $rel_i = 2$: 관련 있음
+- $rel_i = 1$: 약간 관련 있음
+- $rel_i = 0$: 관련 없음
+
+### DCG@K
+
+$
+\mathrm{DCG}@K
+= \sum_{i=1}^{K}
+\frac{2^{rel_i}-1}{\log_2(i+1)}
+$
+
+### IDCG@K
+
+$
+\mathrm{IDCG}@K
+= \max_{\pi}\sum_{i=1}^{K}
+\frac{2^{rel_{\pi(i)}}-1}{\log_2(i+1)}
+$
+
+$\pi$는 평가 대상 문서들의 순열이며, $\mathrm{IDCG}@K$는 관련성이 높은 문서가 앞에 오도록 이상적으로 정렬했을 때의 DCG다.
+
+### nDCG@K
+
+$
+\boxed{
+\mathrm{nDCG}@K
+= \frac{\mathrm{DCG}@K}{\mathrm{IDCG}@K}
+}
+$
 
 일반적으로 nDCG는 0~1이고 1이면 이상적인 순위다. IDCG=0인 query의 처리 규칙은 평가 프로토콜에서 별도 정의해야 한다.
 
