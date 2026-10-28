@@ -779,6 +779,92 @@ class RetrievalVerifier:
 참조: [Self-Improving Agent Systems — Robust Verification](https://github.com/Seung-zedd/self-improving-agent-systems/blob/main/docs/wiki/02-robust-verification.md)
 
 
+
+## 14. Evaluation Dataset과 Qrels — Training 없이 Retrieval 품질 측정하기
+
+검색의 MRR / nDCG를 측정하려면 **어떤 query에 어떤 문서가 relevant인지**에 대한 판정값이 필요하다. 이 평가용 정답 데이터를 qrels(Query Relevance Judgments)라 한다.
+
+### 14.1 Corpus / Evaluation Dataset / Training Dataset
+
+| 구분 | 목적 | 모델 파라미터 업데이트? |
+|---|---|---|
+| Corpus | 실제 검색 대상 문서 집합 | 아니요 |
+| Evaluation Dataset | 검색 결과와 정답 판정을 비교해 품질 측정 | 아니요 |
+| Training Dataset | 모델을 학습·파인튜닝하기 위한 사례 | 학습 시 예 |
+
+가상의 query와 qrels:
+
+```json
+{
+  "query_id": "q001",
+  "query": "부산에서 조용하게 야경을 즐길 장소",
+  "judgments": [
+    {"doc_id": "A", "relevance": 3},
+    {"doc_id": "B", "relevance": 2},
+    {"doc_id": "C", "relevance": 1},
+    {"doc_id": "D", "relevance": 0}
+  ]
+}
+```
+
+`relevance`는 검색 결과의 vector similarity score가 아니라 **별도 기준으로 매긴 관련성 등급**이다.
+
+### 14.2 Offline Evaluation 흐름
+
+```text
+Representative Queries ─────────────┐
+         ↓                           │
+Retrieval System                     │
+         ↓                           │
+Ranked Results                       │
+         ├─────────────── Qrels ─────┘
+         ↓
+Offline Evaluator
+         ├─ Recall@K / Precision@K
+         ├─ MRR
+         └─ nDCG@K
+         ↓
+Compare Baseline / Candidate
+         ↓
+Acceptance Criteria / Regression Check
+```
+
+대규모 corpus의 모든 query-document 쌍을 수작업으로 평가하지는 않는다. 대표 query와 후보 문서를 모아 관련성을 판정하는 **Pooling** 방식 등을 활용한다. 다만 미판정 문서(unjudged)를 관련 없음(irrelevant)과 동일시하면 평가가 왜곡될 수 있다.
+
+### 14.3 Retrieval Evaluation은 Machine Learning Training이 아니다
+
+> ❓ **Q. RAG 신뢰도를 높이려면 평가 데이터셋을 대량으로 Training해야 하고, Mac mini나 Jupyter Notebook 등 별도 학습 환경도 필요한가?**
+>
+> **A. Evaluation Dataset만 구축해서 MRR/nDCG를 계산하는 데 별도 모델 Training은 필요 없다.** Jupyter Notebook은 평가 결과 분석 도구일 수 있지만 필수는 아니며, 작은 평가셋은 일반적인 개발 PC와 Python 스크립트로도 측정할 수 있다. 검색 설정·RRF·Top-K 등을 바꿔 재평가하는 것은 모델 가중치를 학습시키는 것과 다르다.
+
+> ❓ **Q. 이미 학습된 임베딩 모델로 문서 10만 건의 embedding vector를 생성하는 것은 Training인가, Inference인가?**
+>
+> **A. Inference다.** 모델 파라미터를 업데이트하지 않고 입력 문서에 대해 벡터를 계산한다. Training은 LLM에만 한정되지 않는다. 임베딩 모델, Reranker, Query Classifier 등의 파라미터를 최적화하는 것도 Training이다.
+
+```text
+Documents
+   ↓
+Pretrained Embedding Model (Inference)
+   ↓
+Vector Index
+   ↓
+Retrieval / Ranking
+   ↓
+Qrels-based Evaluation (No Training)
+   ↓
+Evidence-based Tuning
+   ↓
+[필요성이 검증되면] Model Fine-tuning
+```
+
+평가부터 시작하는 이유: **측정 기준이 없으면 Fine-tuning 이후 개선 여부도 검증할 수 없다.**
+
+### 🔗 Connecting the Dots — Offline Evaluation vs Runtime Process Verification
+
+- **Offline Evaluation:** 라벨이 있는 데이터셋을 대상으로 여러 query의 검색 품질을 통계적으로 평가한다.
+- **Runtime Process Verification:** 실제 요청의 단계별 산출물이 검증 가능한 조건(invariant)을 충족하는지 확인하고 실패 지점을 찾는다.
+- 둘은 상호보완적이지만 동일하지 않다. Runtime에는 보통 정답 qrels가 없으므로 매 요청마다 MRR/nDCG를 계산할 수 없다.
+
 ## Lesson 05 현재 요약
 
 ```text
@@ -871,3 +957,21 @@ Query-document 쌍에 대한 사람이 정의하거나 검증한 관련성 판�
 
 ### Verifier
 지표·로그·중간 결과를 명시한 acceptance criteria와 비교해 검증하는 절차 또는 컴포넌트.
+
+### Corpus
+실제 검색 대상 문서의 전체 집합.
+
+### Evaluation Dataset
+대표 query와 정답 판단 정보를 이용해 시스템 품질을 측정하는 데이터. 모델 학습과 구분한다.
+
+### Training Dataset
+모델 파라미터 학습이나 파인튜닝에 쓰는 데이터.
+
+### Pooling
+여러 검색 방식에서 나온 후보 결과를 모아 관련성을 판정하는 평가셋 구축 방법.
+
+### Inference
+학습된 모델의 파라미터를 변경하지 않고 새 입력에 대한 출력을 계산하는 작업.
+
+### Fine-tuning
+이미 학습된 모델의 파라미터를 특정 목적의 데이터로 추가 학습하는 과정.
