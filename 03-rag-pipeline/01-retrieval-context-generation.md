@@ -534,3 +534,16 @@ JSON object/field group처럼 구조적으로 경계가 있는 데이터 영역.
 
 ### Lexical-first Cascade
 exact/lexical search를 먼저 시도하고 부족할 때 semantic retrieval로 fallback하는 전략.
+
+---
+
+## References
+
+### Primary Sources
+- Lewis, P. et al. (2020). [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — RAG 원 논문.
+- Liu, N. F. et al. (2023). [Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172) — 문맥의 배치와 활용 한계.
+
+### Related Public Study
+- [Self-Improving Agent Systems — Robust Verification](https://github.com/Seung-zedd/self-improving-agent-systems/blob/main/docs/wiki/02-robust-verification.md) — 검증 계층과 실패 지점 분석을 연결하는 개인 학습 노트.
+
+> **구분:** QueryRouter, Lexical-first Cascade, 논리 영역 확장 등은 공개 개념을 바탕으로 정리하거나 이 레슨에서 제안한 설계 아이디어이며, 위 논문들의 직접적인 제안이라고 단정하지 않는다.
