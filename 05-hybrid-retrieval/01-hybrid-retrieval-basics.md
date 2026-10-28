@@ -993,3 +993,21 @@ Query-document 쌍에 대한 사람이 정의하거나 검증한 관련성 판�
 
 ### Fine-tuning
 이미 학습된 모델의 파라미터를 특정 목적의 데이터로 추가 학습하는 과정.
+
+---
+
+## References
+
+### Primary Sources
+- Cormack, G. V., Clarke, C. L. A. & Buettcher, S. (2009). [Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods](https://doi.org/10.1145/1571941.1572114) — RRF 기반 순위 융합.
+- Järvelin, K. & Kekäläinen, J. (2002). [Cumulated Gain-Based Evaluation of IR Techniques](https://doi.org/10.1145/582415.582418) — DCG/nDCG 평가.
+- Lewis, P. et al. (2020). [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — RAG 검색·생성 구조의 배경.
+
+### Official Documentation
+- [Elasticsearch — Reciprocal rank fusion](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion) — RRF의 검색 엔진 적용.
+- [TREC — Text REtrieval Conference](https://trec.nist.gov/) — qrels와 정보 검색 평가의 공개 벤치마크 맥락.
+
+### Related Public Study
+- [Self-Improving Agent Systems — Robust Verification](https://github.com/Seung-zedd/self-improving-agent-systems/blob/main/docs/wiki/02-robust-verification.md) — Stanford CS329A 학습 내용을 기반으로 한 Process Verification 연결.
+
+> **구분:** QueryRouter confidence, Lexical-first Cascade, Phase별 Verifier 인터페이스 등은 학습 과정에서 제안한 설계·응용 아이디어다. 참고 논문의 원 주장과 구분한다.
