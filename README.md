@@ -21,6 +21,19 @@ Vector Database와 Retrieval-Augmented Generation(RAG)을 기초부터 이해하
 - [Lesson 04 — Chunking](./04-chunking/01-chunking-strategies.md)
 - [Lesson 05 — Hybrid Retrieval](./05-hybrid-retrieval/01-hybrid-retrieval-basics.md)
 
+## 레슨 파일 분할 규칙
+
+학습 문서의 가독성을 위해 **Markdown 파일 하나가 500라인을 초과하면 동일한 레슨 폴더에 새 파일을 만들어 내용을 분할**합니다.
+
+- 파일명은 레슨 폴더 안에서 `01-주제.md`, `02-주제.md`, `03-주제.md`처럼 **두 자리 순번 + 주제명**으로 지정합니다.
+- 기존 파일이 500라인을 넘기기 전에 자연스러운 주제·절 경계에서 분할합니다. 코드 블록, 수식, Q&A, 표를 중간에 자르지 않습니다.
+- 각 분할 파일은 **500라인 이하**를 목표로 유지하고, 새 내용으로 초과할 경우 다음 번호의 파일을 생성합니다.
+- README 목차와 파일 간 이전/다음 링크를 함께 갱신해 학습 순서가 이어지도록 합니다.
+- 각 파일의 Glossary 및 References는 해당 파일의 내용에 맞춰 관리하고, 출처 추적성을 유지합니다.
+- 기존 장문 파일도 후속 정리 시 이 규칙에 맞게 분할합니다.
+
+---
+
 ## 범위
 
 이 레포에는 일반화된 학습 내용과 공개 가능한 synthetic example만 포함합니다.
