@@ -962,6 +962,79 @@ Precision@5 = 2 / 5 = 0.4
 
 ---
 
+## 15. Retrieval Regression Testing — Golden Set과 Acceptance Criteria
+
+검색 알고리즘을 개선해도 과거에 잘 찾던 결과가 악화될 수 있다. **Retrieval Regression Testing**은 같은 평가 조건에서 기존 버전(Baseline)과 변경 버전(Candidate)을 비교해 이러한 회귀를 발견한다.
+
+```text
+Versioned Golden Set (Queries + Qrels)
+              ↓
+      ┌───────┴───────┐
+      ↓               ↓
+   Baseline        Candidate
+      ↓               ↓
+   Evaluation      Evaluation
+      └───────┬───────┘
+              ↓
+      Regression Verifier
+      (Acceptance Criteria)
+              ↓
+          PASS / FAIL
+```
+
+같은 Corpus snapshot, 평가용 Query/Qrels, Top-K 설정 등 가능한 평가 조건을 고정해 비교한다. 전체 평균이 개선되어도 특정 query 유형의 품질은 악화될 수 있으므로 질의 그룹별 성능도 살핀다.
+
+### Golden Set / Invariant / Acceptance Criteria의 차이
+
+> ❓ **Q. Acceptance Criteria를 정하기 위해 고정하는 Invariant Dataset을 Golden Set이라고 부르는가?**
+>
+> **A. 비슷한 방향이지만 서로 구분한다.** Golden Set(Gold Dataset)은 평가용 정답이 포함된 신뢰 가능한 기준 데이터이고, Invariant는 변경 후에도 깨지면 안 되는 시스템 조건이며, Acceptance Criteria는 평가 점수나 조건의 합격 기준이다.
+
+| 개념 | 질문 | 예시 |
+|---|---|---|
+| Golden Set | 무엇이 관련 문서인가? | Query + Relevant Document IDs / Qrels |
+| Invariant | 무엇을 반드시 지켜야 하나? | 반환된 문서 ID가 유효하며 필수 필터를 준수 |
+| Acceptance Criteria | 얼마나 잘해야 합격인가? | Recall@5 ≥ 0.90, nDCG@5 ≥ 0.85 |
+
+수치 기준은 설명용 예시이며 실제 제품의 기준을 의미하지 않는다.
+
+```json
+{
+  "query_id": "q001",
+  "query": "가상의 박물관 운영시간",
+  "judgments": [{"doc_id": "doc_A", "relevance": 3}]
+}
+```
+
+### Golden Set은 점진적으로 확장할 수 있다
+
+> ❓ **Q. Golden Set도 incrementally 업데이트할 수 있는가?**
+>
+> **A. 그렇다.** 새 질의 유형이나 실패 사례를 발견하면 평가용 Query와 Qrels를 검토 후 추가할 수 있다. 정답이 바뀌거나 잘못된 라벨이 발견되면 수정할 수도 있다. 단, **버전을 기록하고 같은 버전끼리 비교**해야 의미 있는 회귀 평가가 가능하다.
+
+```text
+golden-set-v1
+  → 대표 Query 30개
+
+golden-set-v2
+  → 신규 실패 사례 10개 추가 / 라벨 검증
+
+golden-set-v3
+  → 실제 정보 변경에 맞춰 정답 갱신
+```
+
+평가 데이터셋이 변경되면 점수 차이가 검색 전략 때문인지 평가셋 변화 때문인지 구분해야 한다. 따라서 Baseline과 Candidate를 **동일한 Golden Set 버전**으로 재평가하고 변경 이력을 보존한다.
+
+### 🔗 Connecting the Dots — Stanford Process Verification
+
+- **Evaluator:** Recall@K / MRR / nDCG를 계산한다.
+- **Verifier:** 계산 결과와 Acceptance Criteria를 대조한다.
+- **Stage Gate:** 통과·보류·실패 시의 진행 경로를 결정한다.
+
+코드의 단위 테스트가 통과하더라도 검색 품질의 회귀가 발생할 수 있다. 즉, **TEST PASS ≠ ENGINEERING DONE**.
+
+---
+
 ## Lesson 05 현재 요약
 
 ```text
@@ -1072,6 +1145,23 @@ Query-document 쌍에 대한 사람이 정의하거나 검증한 관련성 판�
 
 ### Fine-tuning
 이미 학습된 모델의 파라미터를 특정 목적의 데이터로 추가 학습하는 과정.
+
+---
+
+### Golden Set (Gold Dataset)
+대표 Query와 관련성 판정(Qrels)을 담아 검색 품질 평가의 기준으로 사용하는 데이터셋. 버전 관리하며 확장·수정할 수 있다.
+
+### Regression Testing
+시스템 변경 뒤 기존 동작이나 품질이 악화되지 않았는지 기준 버전과 비교하는 검증.
+
+### Baseline / Candidate
+비교 기준이 되는 기존 버전 / 새로 평가하는 변경 버전.
+
+### Acceptance Criteria
+평가 결과의 통과 여부를 판단하기 위해 명시한 기준.
+
+### Invariant
+시스템 동작 중 반드시 유지해야 하는 조건.
 
 ---
 
