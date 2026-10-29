@@ -883,6 +883,85 @@ Evidence-based Tuning
 - **Runtime Process Verification:** 실제 요청의 단계별 산출물이 검증 가능한 조건(invariant)을 충족하는지 확인하고 실패 지점을 찾는다.
 - 둘은 상호보완적이지만 동일하지 않다. Runtime에는 보통 정답 qrels가 없으므로 매 요청마다 MRR/nDCG를 계산할 수 없다.
 
+## ❓ Confusing Point — Embedding Score와 Recall@K / Precision@K의 계산 시점
+
+> ❓ **Q. Recall@K와 Precision@K를 배우다가 헷갈렸다. 도대체 언제 Embedding을 수행하고, 언제 점수를 계산하는가? 외부 문서를 Retrieve할 때 Vector Search를 수행하는 것인가?**
+>
+> **A. Embedding, Retrieval Ranking Score, Evaluation Metric은 서로 다른 단계다.** Vector Search는 이미 저장된 문서 벡터와 사용자 질의 벡터를 비교해 검색 결과를 만들고, Recall@K / Precision@K는 그 **검색이 끝난 결과**를 정답 판정(Qrels)과 비교해 계산한다.
+
+### 1. Indexing 시점 — Document Embedding
+
+```text
+External Documents / API / Crawling
+       ↓
+Parse / Normalize / (필요 시) Chunk
+       ↓
+Document Embedding  ← 사전 학습된 Embedding Model의 Inference
+       ↓
+Vector Index 저장
+```
+
+문서 벡터는 일반적으로 미리 계산한다. 매 요청마다 전체 문서를 다시 임베딩하는 것은 아니다. 외부 문서를 수집하는 Fetch/Crawling과 저장된 문서를 검색하는 Retrieval도 구분해야 한다.
+
+### 2. Query / Retrieval 시점 — Query Embedding 및 Similarity Score
+
+```text
+User Query
+   ↓
+Query Embedding  ← Semantic/Vector Search를 할 때
+   ↓
+Query Vector
+   ↓
+Vector Index에서 Similarity / Distance 계산
+   ↓
+Search Score에 따른 Ranking
+   ↓
+Top-K Documents
+```
+
+- **Query Embedding:** 사용자 질의를 벡터로 변환한다.
+- **Similarity / Distance Score:** query vector와 document vector의 유사도·거리를 계산한다. ANN은 이 근접한 문서들을 효율적으로 근사 탐색할 수 있다.
+- **Top-K:** 검색 엔진이 계산한 순위를 기준으로 K개를 반환한다.
+- **Lexical-only 경로:** 키워드 기반 검색만 수행하므로 Query Embedding이 필수는 아니다.
+- **Hybrid 경로:** Lexical/Vector 결과를 RRF 등으로 Fusion할 수 있다. 이때 Fusion Score도 정답률 자체가 아니다.
+
+### 3. Evaluation 시점 — Recall@K / Precision@K
+
+```text
+Ranked Top-K Documents ───────┐
+                              ├→ Compare → Recall@K / Precision@K
+Qrels (정답/관련성 판정) ──────┘
+```
+
+예시:
+
+```text
+Vector Search가 반환한 Top-5:
+[A, D, B, E, F]
+
+정답 문서 집합(Qrels):
+{A, B, C}
+
+Recall@5    = 2 / 3 ≈ 0.667
+Precision@5 = 2 / 5 = 0.4
+```
+
+여기서 **Recall@5=0.667은 Embedding 모델이 반환한 유사도 점수가 아니다.** 검색이 끝난 뒤 정답 문서가 얼마나 포함되었는지 측정한 *평가 지표*다. 이 지표는 일반적으로 정답 정보가 있는 Offline Evaluation에서 계산한다.
+
+### 🔗 Connecting the Dots — Score의 책임 분리
+
+| 구분 | 계산 시점 | 역할 |
+|---|---|---|
+| Embedding Vector | 문서 Indexing / 질의 처리 | 의미 표현 생성 |
+| Similarity / BM25 Score | Retrieval 실행 | 후보 문서 검색과 순위 산정 |
+| RRF Fusion Score | 여러 검색 결과 결합 시 | 최종 검색 순위 결합 |
+| Recall@K / Precision@K | Retrieval 이후, Qrels와 비교 | 검색 품질 평가 |
+| MRR / nDCG@K | Retrieval 이후, Qrels와 비교 | 순위 품질 평가 |
+
+> **핵심:** Retrieval Score는 **검색 결과를 만드는 점수**이고, Evaluation Metric은 **그 검색 결과가 얼마나 좋은지 측정하는 점수**다. 둘은 같은 숫자가 아니다.
+
+---
+
 ## Lesson 05 현재 요약
 
 ```text
