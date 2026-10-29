@@ -20,8 +20,9 @@ Vector Database와 Retrieval-Augmented Generation(RAG)을 기초부터 이해하
 - [Lesson 03 — RAG Retrieval Pipeline](./03-rag-pipeline/01-retrieval-context-generation.md)
 - [Lesson 04 — Chunking](./04-chunking/01-chunking-strategies.md)
 - [Lesson 05-1 — Hybrid Retrieval Basics](./05-hybrid-retrieval/01-hybrid-retrieval-basics.md)
-- [Lesson 05-2 — Query Routing & Ranking](./05-hybrid-retrieval/02-query-routing-and-fusion.md)
-- [Lesson 05-3 — Verification & Regression](./05-hybrid-retrieval/03-evaluation-and-regression.md)
+- [Lesson 05-2 — Query Routing and Fusion](./05-hybrid-retrieval/02-query-routing-and-fusion.md)
+- [Lesson 05-3 — Retrieval Metrics and Verification](./05-hybrid-retrieval/03-retrieval-metrics-and-verification.md)
+- [Lesson 05-4 — Evaluation and Regression](./05-hybrid-retrieval/04-evaluation-and-regression.md)
 
 ## 레슨 파일 분할 규칙
 
