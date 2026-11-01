@@ -23,9 +23,13 @@ Part 16의 Failure Localization으로 문제 단계를 파악했다면, Part 17�
 검색의 Quality(nDCG 등), Latency(P95 등), Cost는 서로 충돌할 수 있다.
 
 ```math
-\max_{\theta}\ \operatorname{nDCG}@10(\theta)
-\quad\text{subject to}\quad
-\operatorname{P95Latency}(\theta) \le L_{\max}
+\max_{\theta}\ \mathrm{nDCG}@10(\theta)
+```
+
+subject to
+
+```math
+\mathrm{P95Latency}(\theta) \le L_{\max}
 ```
 
 `θ`는 후보 수, 검색 범위, RRF 설정, Reranker 종류 등의 시스템 설정이다. 실험 예시의 250ms 같은 지연시간 제한은 **실제 SLA가 아닌 가정**이다.
@@ -43,7 +47,10 @@ Q(L)=0.60+0.07\ln\left(1+\frac{L}{50}\right)
 ```
 
 ```math
-Q'(L)=\frac{0.07}{50+L}>0,\qquad
+Q'(L)=\frac{0.07}{50+L}>0
+```
+
+```math
 Q''(L)=-\frac{0.07}{(50+L)^2}<0
 ```
 
@@ -73,7 +80,7 @@ Baseline → Evaluate (fixed corpus / qrels / settings)
 RRF는 원문을 읽어 의미를 다시 판단하지 않고, **검색 엔진에서 얻은 순위**를 조합한다.
 
 ```math
-\operatorname{RRF}(d)=\sum_{r\in R,\ d\in r}\frac{1}{k+\operatorname{rank}_{r}(d)}
+\mathrm{RRF}(d)=\sum_{r\in R,\ d\in r}\frac{1}{k+\mathrm{rank}_{r}(d)}
 ```
 
 Cross-Encoder 기반 Reranker는 각 후보에 `(query, document)`를 결합 입력해 관련성 점수를 계산한다. 반면 Bi-Encoder는 Query와 Document를 각각 인코딩해 벡터 유사도를 계산한다. Cross-Encoder는 정밀한 상호작용을 포착할 수 있으나 후보별 추론 비용이 크므로 **검색 전체 corpus보다는 후보 집합에 적용**하는 경우가 많다.
