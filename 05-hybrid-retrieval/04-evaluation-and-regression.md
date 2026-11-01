@@ -1,6 +1,6 @@
 # Lesson 05-4 — Evaluation and Regression
 
-> Previous: [Lesson 05-3](03-retrieval-metrics-and-verification.md)
+> Previous: [Lesson 05-3](./03-retrieval-metrics-and-verification.md) · Next: [Lesson 05-5 — Retrieval Failure Analysis](./05-failure-analysis.md)
 
 
 ## 14. Evaluation Dataset과 Qrels — Training 없이 Retrieval 품질 측정하기
