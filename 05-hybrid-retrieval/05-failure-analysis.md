@@ -1,6 +1,6 @@
 # Lesson 05-5 — Retrieval Failure Analysis
 
-> Previous: [Lesson 05-4 — Evaluation and Regression](./04-evaluation-and-regression.md)
+> Previous: [Lesson 05-4 — Evaluation and Regression](./04-evaluation-and-regression.md) · Next: [Lesson 05-6 — Retrieval Optimization](./06-retrieval-optimization.md)
 
 ## 16. Retrieval Failure Analysis — 왜 검색 결과가 나빠졌는가?
 
