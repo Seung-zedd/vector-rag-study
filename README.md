@@ -80,6 +80,25 @@ Vector Database와 Retrieval-Augmented Generation(RAG)을 기초부터 이해하
 
 ---
 
+## 수식 작성 규칙 — GitHub Markdown
+
+**모든 독립 수식은 GitHub의 fenced `math` 코드 블록으로 작성한다.** 일반 Markdown 본문에 `$ ... $`, `\[ ... \]` 등으로 블록 수식을 직접 작성하지 않는다.
+
+예시:
+
+````markdown
+```math
+\mathrm{nDCG}@K = \frac{\mathrm{DCG}@K}{\mathrm{IDCG}@K}
+```
+````
+
+- 수식 내부에서는 필요한 LaTeX 수식 명령을 사용하되, GitHub 렌더러가 허용하는 문법만 사용한다.
+- `\operatorname`처럼 GitHub에서 오류가 난 매크로는 피하고, 가능한 경우 `\mathrm{...}` 등 호환 문법을 사용한다.
+- 여러 줄 수식이 렌더링 오류를 일으키면 각각 독립된 `math` 블록으로 나눈다.
+- 문서 푸시 전 `math` 블록 경계와 지원하지 않는 매크로 여부를 점검한다.
+
+---
+
 ## References 작성 원칙
 
 각 Lesson은 **Glossary 다음, 문서의 맨 아래에 `## References`**를 둡니다.
