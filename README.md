@@ -25,6 +25,7 @@ Vector Database와 Retrieval-Augmented Generation(RAG)을 기초부터 이해하
 - [Lesson 05-4 — Evaluation and Regression](./05-hybrid-retrieval/04-evaluation-and-regression.md)
 - [Lesson 05-5 — Retrieval Failure Analysis](./05-hybrid-retrieval/05-failure-analysis.md)
 - [Lesson 05-6 — Retrieval Optimization & Adaptive Strategy Routing](./05-hybrid-retrieval/06-retrieval-optimization.md)
+- [Lesson 05-7 — Adaptive Retrieval, Early Exit & Abstention](./05-hybrid-retrieval/07-adaptive-retrieval-and-early-exit.md)
 
 ## 레슨 파일 분할 규칙
 
