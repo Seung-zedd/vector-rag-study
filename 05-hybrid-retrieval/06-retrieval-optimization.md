@@ -1,6 +1,6 @@
 # Lesson 05-6 — Retrieval Optimization & Adaptive Strategy Routing
 
-> Previous: [Lesson 05-5 — Retrieval Failure Analysis](./05-failure-analysis.md)
+> Previous: [Lesson 05-5 — Retrieval Failure Analysis](./05-failure-analysis.md) · Next: [Lesson 05-7 — Adaptive Retrieval](./07-adaptive-retrieval-and-early-exit.md)
 
 ## 17. Retrieval Optimization — Quality, Latency, Cost의 Trade-off
 
