@@ -1,6 +1,6 @@
 # Lesson 05-8 — Context Engineering, Lost in the Middle & Retrieval Caching
 
-> Previous: [Lesson 05-7 — Adaptive Retrieval](./07-adaptive-retrieval-and-early-exit.md)
+> Previous: [Lesson 05-7 — Adaptive Retrieval](./07-adaptive-retrieval-and-early-exit.md) · Next: [Lesson 05-9 — RAG Cache Design Patterns](./09-cache-design-patterns.md)
 
 ## 19. Retrieval Success ≠ Answer Success
 
