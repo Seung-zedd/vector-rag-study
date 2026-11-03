@@ -27,6 +27,7 @@ Vector Database와 Retrieval-Augmented Generation(RAG)을 기초부터 이해하
 - [Lesson 05-6 — Retrieval Optimization & Adaptive Strategy Routing](./05-hybrid-retrieval/06-retrieval-optimization.md)
 - [Lesson 05-7 — Adaptive Retrieval, Early Exit & Abstention](./05-hybrid-retrieval/07-adaptive-retrieval-and-early-exit.md)
 - [Lesson 05-8 — Context Engineering, Lost in the Middle & Retrieval Caching](./05-hybrid-retrieval/08-context-engineering-and-cache.md)
+- [Lesson 05-9 — RAG Cache Design Patterns](./05-hybrid-retrieval/09-cache-design-patterns.md)
 
 ## 레슨 파일 분할 규칙
 
