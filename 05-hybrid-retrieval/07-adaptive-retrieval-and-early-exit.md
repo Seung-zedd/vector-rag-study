@@ -1,6 +1,6 @@
 # Lesson 05-7 — Adaptive Retrieval, Early Exit & Abstention
 
-> Previous: [Lesson 05-6 — Retrieval Optimization](./06-retrieval-optimization.md)
+> Previous: [Lesson 05-6 — Retrieval Optimization](./06-retrieval-optimization.md) · Next: [Lesson 05-8 — Context Engineering & Caching](./08-context-engineering-and-cache.md)
 
 ## 18. Adaptive Retrieval — Query마다 같은 검색 비용을 지불해야 할까?
 
