@@ -1,6 +1,6 @@
 # Lesson 05-9 — RAG Cache Design Patterns: Cache-Aside, Strategy & Observer
 
-> Previous: [Lesson 05-8 — Context Engineering & Retrieval Caching](./08-context-engineering-and-cache.md)
+> Previous: [Lesson 05-8 — Context Engineering & Retrieval Caching](./08-context-engineering-and-cache.md) · Next: [Lesson 05-10 — Citation Support & Faithfulness](./10-citation-support-and-faithfulness.md)
 
 ## 20. 무엇을 캐싱하고, 어떻게 추적할 것인가?
 
