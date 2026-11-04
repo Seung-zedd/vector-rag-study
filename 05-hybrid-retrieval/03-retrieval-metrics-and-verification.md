@@ -251,6 +251,13 @@ class RetrievalVerifier:
 
 ---
 
+## 🔗 Related Public Study — Retrieval 지표와 Citation 지표 연결
+
+- [Lesson 05-10 — Citation Support & Faithfulness Verification](./10-citation-support-and-faithfulness.md)에서는 여기서 배운 **Precision@K / Recall@K** 공식과 동일한 예시를 수식으로 복습하고, **Citation Precision / Citation Recall**과 평가 분모를 비교한다.
+- 집합 표기의 `|R|`은 절댓값이 아니라 **집합의 기수(Cardinality)**이다. 조건부확률과 베이즈 정리는 구별한다.
+
+---
+
 ## Glossary
 
 ### Recall@K
