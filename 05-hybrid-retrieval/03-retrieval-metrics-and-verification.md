@@ -5,44 +5,78 @@
 
 ## 11. Hybrid Retrieval Evaluation — Recall@K / Precision@K
 
-검색 품질은 감이 아니라 metric으로 측정해야 한다.
+검색 품질은 감이 아니라 metric으로 측정해야 한다. 이 절에서는 **집합 기반 정의 → 조건부확률 해석 → 수식 예제** 순서로 복습한다.
 
-### Recall@K
+> ❓ **Q. Precision@K와 Recall@K를 조건부확률로 표현할 수 있지 않나? 그리고 `|R|`은 왜 절댓값처럼 표시하지?**
+>
+> **A. 유한한 평가 문서 집합에서 문서를 균등하게 선택하는 확률 실험을 정의하면 두 지표를 서로 방향이 다른 조건부확률로 해석할 수 있다.** `|R|`은 절댓값이 아니라 집합 원소 개수인 **기수(Cardinality)**다.
 
-정답 문서가:
+### 기호 정의
 
-```text
-A, B, C
+- `R`: 해당 Query와 관련 있는 문서들의 집합 (qrels 기반)
+- `D_K`: Retriever가 반환한 Top-K 문서의 집합 (중복 없이 K개로 가정)
+- `R ∩ D_K`: 관련 있으면서 Top-K에도 포함된 문서들의 교집합
+- `|S|`: 집합 `S`에 포함된 원소의 개수 (기수)
+
+### Precision@K — 검색한 문서 중 정답의 비율
+
+```math
+\mathrm{Precision@K}=\frac{|R\cap D_K|}{|D_K|}
 ```
 
-이고 Top-5 결과가:
+전체 평가 문서에서 균등하게 하나를 뽑고 `D_K`에 속한다는 조건을 걸면:
 
-```text
-[A, D, B, E, F]
+```math
+\mathrm{Precision@K}=P(R\mid D_K)
 ```
 
-라면 정답 3개 중 2개를 찾았으므로:
+### Recall@K — 전체 정답 문서 중 찾아낸 비율
 
-```text
-Recall@5 = 2 / 3 = 0.67
+```math
+\mathrm{Recall@K}=\frac{|R\cap D_K|}{|R|}
 ```
 
-의미:
+동일한 균등 추출 확률 모델에서 `R`에 속한다는 조건을 걸면:
 
-> 존재하는 relevant document 중 Top-K 안에 얼마나 많이 포함시켰는가.
-
-### Precision@K
-
-같은 Top-5 결과에서 relevant result는 A, B 두 개이므로:
-
-```text
-Precision@5 = 2 / 5 = 0.4
+```math
+\mathrm{Recall@K}=P(D_K\mid R)
 ```
 
-의미:
+### 수식 예제 — Lesson 05-10과 동일
 
-> 가져온 Top-K 결과 중 실제 relevant result의 비율이 얼마나 되는가.
+```math
+R=\{A,B,C\},\quad D_5=\{A,D,B,E,F\}
+```
 
+```math
+R\cap D_5=\{A,B\},\quad |R\cap D_5|=2
+```
+
+```math
+\mathrm{Precision@5}=\frac25=0.4
+```
+
+```math
+\mathrm{Recall@5}=\frac23\approx0.667
+```
+
+여기서 `|R|=3`, `|D_5|=5`처럼 세로 막대는 **집합의 기수**를 나타낸다. 실수 `|-3|=3`처럼 쓰는 절댓값과는 구분한다.
+
+### 🔗 Connecting the Dots — 조건부확률과 베이즈 정리
+
+조건부확률의 정의는 다음과 같다 (`P(B)>0`).
+
+```math
+P(A\mid B)=\frac{P(A\cap B)}{P(B)}
+```
+
+이를 이용해 사건의 조건 방향을 바꿔 연결한 것이 베이즈 정리다.
+
+```math
+P(R\mid D_K)=\frac{P(D_K\mid R)P(R)}{P(D_K)}
+```
+
+따라서 **Precision@K와 Recall@K 자체는 조건부확률의 서로 다른 방향**이며, 둘을 사전확률과 결합해 바꾸는 관계가 베이즈 정리다. 이 해석은 고정된 질의와 평가 집합에서의 비율을 확률로 재표현한 것으로, 별도의 베이지안 학습·추론 모델을 뜻하지 않는다. `|R|=0` 등 분모가 0인 경우는 평가 정책에서 별도로 처리해야 한다.
 Trade-off:
 
 ```text
