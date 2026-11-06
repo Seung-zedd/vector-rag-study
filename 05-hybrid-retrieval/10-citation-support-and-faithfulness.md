@@ -137,10 +137,10 @@ P(R\mid D_K)=\frac{P(D_K\mid R)P(R)}{P(D_K)}
 
 | 평가 지표 | 분자 | 분모 |
 |---|---|---|
-| Precision@K | Top-K에 포함된 관련 문서 수 `\lvert R\cap D_K\rvert` | Top-K 문서 수 `\lvert D_K\rvert` |
-| Recall@K | Top-K에 포함된 관련 문서 수 `\lvert R\cap D_K\rvert` | 전체 관련 문서 수 `\lvert R\rvert` |
-| Citation Precision | 적절한 인용 연결 수 `\sum_{\ell\in L}V(\ell)` | 생성된 인용 연결 수 `\lvert L\rvert` |
-| Citation Recall | 근거가 충분한 Claim 수 `\sum_{c\in C}S(c,E_c)` | 평가 대상 Claim 수 `\lvert C\rvert` |
+| Precision@K | Top-K에 포함된 관련 문서 수 $`\lvert R\cap D_K\rvert`$ | Top-K 문서 수 $`\lvert D_K\rvert`$ |
+| Recall@K | Top-K에 포함된 관련 문서 수 $`\lvert R\cap D_K\rvert`$ | 전체 관련 문서 수 $`\lvert R\rvert`$ |
+| Citation Precision | 적절한 인용 연결 수 $`\sum_{\ell\in L}V(\ell)`$ | 생성된 인용 연결 수 $`\lvert L\rvert`$ |
+| Citation Recall | 근거가 충분한 Claim 수 $`\sum_{c\in C}S(c,E_c)`$ | 평가 대상 Claim 수 $`\lvert C\rvert`$ |
 
 **핵심:** Retrieval의 Precision@K와 Recall@K는 **동일한 교집합** `R ∩ D_K`의 원소 수를 공통 분자로 사용한다. 반면 위에서 정의한 Citation Precision/Recall은 평가 단위(인용 연결 / Claim)가 서로 달라 분자도 다르다.
 
