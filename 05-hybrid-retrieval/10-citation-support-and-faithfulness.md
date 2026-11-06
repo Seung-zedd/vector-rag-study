@@ -135,12 +135,14 @@ P(R\mid D_K)=\frac{P(D_K\mid R)P(R)}{P(D_K)}
 \mathrm{CitationPrecision}=\frac{\sum_{\ell\in L}V(\ell)}{|L|}
 ```
 
-| 평가 지표 | 세는 대상 (분자) | 전체 대상 (분모) |
+| 평가 지표 | 분자 | 분모 |
 |---|---|---|
-| Precision@K | 검색된 relevant 문서 수 | 검색된 Top-K 문서 수 |
-| Recall@K | 검색된 relevant 문서 수 | 전체 relevant 문서 수 |
-| Citation Precision | 적절한 인용 연결 수 | 생성된 인용 연결 수 |
-| Citation Recall | 충분한 인용 근거를 가진 Claim 수 | 평가 대상 생성 Claim 수 |
+| Precision@K | Top-K에 포함된 관련 문서 수 `\lvert R\cap D_K\rvert` | Top-K 문서 수 `\lvert D_K\rvert` |
+| Recall@K | Top-K에 포함된 관련 문서 수 `\lvert R\cap D_K\rvert` | 전체 관련 문서 수 `\lvert R\rvert` |
+| Citation Precision | 적절한 인용 연결 수 `\sum_{\ell\in L}V(\ell)` | 생성된 인용 연결 수 `\lvert L\rvert` |
+| Citation Recall | 근거가 충분한 Claim 수 `\sum_{c\in C}S(c,E_c)` | 평가 대상 Claim 수 `\lvert C\rvert` |
+
+**핵심:** Retrieval의 Precision@K와 Recall@K는 **동일한 교집합** `R ∩ D_K`의 원소 수를 공통 분자로 사용한다. 반면 위에서 정의한 Citation Precision/Recall은 평가 단위(인용 연결 / Claim)가 서로 달라 분자도 다르다.
 
 합성 예: 4개 Claim 중 2개에 충분한 근거가 있으면 Citation Recall = `2/4`; 4개 인용 연결 중 2개가 적절하면 Citation Precision = `2/4`. **분모는 서로 다르고, 점수가 같아도 동일한 품질 속성을 의미하지 않는다.**
 
